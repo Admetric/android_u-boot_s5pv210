@@ -25,11 +25,8 @@ include $(TOPDIR)/config.mk
 
 LIB	:= $(obj)libmtd.a
 
-COBJS-$(CONFIG_MTD_DEVICE) += mtdcore.o
-COBJS-$(CONFIG_MTD_PARTITIONS) += mtdpart.o
-COBJS-$(CONFIG_MTD_CONCAT) += mtdconcat.o
-COBJS-$(CONFIG_HAS_DATAFLASH) += at45.o
-COBJS-$(CONFIG_FLASH_CFI_DRIVER) += cfi_flash.o
+COBJS-y += at45.o
+COBJS-y += cfi_flash.o
 COBJS-$(CONFIG_HAS_DATAFLASH) += dataflash.o
 COBJS-y += mw_eeprom.o
 COBJS-$(CONFIG_FLASH_CFI_LEGACY) += jedec_flash.o

@@ -209,17 +209,7 @@ ulong get_PCLKP(void)
 	return fclk/(pclk_psys_ratio+1);
 }
 
-/* return SCLKA2M frequency */
-ulong get_SCLKA2M(void)
-{
-	ulong fclk;
-	uint div = CLK_DIV0_REG;
-	uint a2m_ratio = ((div>>4) & 0x7);
-
-	fclk = get_FCLK();	
-
-	return fclk/(a2m_ratio+1);
-}/* return UCLK frequency */
+/* return UCLK frequency */
 ulong get_UCLK(void)
 {
 	return (get_PLLCLK(EPLL));
@@ -227,36 +217,10 @@ ulong get_UCLK(void)
 
 int print_cpuinfo(void)
 {
-	uint set_speed;
-	uint tmp;
-	uchar result_set;
-
-#if defined(CONFIG_CLK_533_133_100_100)
-	set_speed = 53300;
-#elif defined(CONFIG_CLK_667_166_166_133)
-	set_speed = 66700;
-#elif defined(CONFIG_CLK_800_200_166_133)
-	set_speed = 80000;
-#elif defined(CONFIG_CLK_1000_200_166_133)
-	set_speed = 100000;
-#elif defined(CONFIG_CLK_1200_200_166_133)
-	set_speed = 120000;
-#else
-	set_speed = 100000;
-	printf("Any CONFIG_CLK_XXX is not enabled\n");
-#endif
-	tmp = (set_speed / (get_ARMCLK()/1000000));
-
-	if((tmp < 105) && (tmp > 95)){
-		result_set = 1;
-	} else {
-		result_set = 0;
-	}
-
 #ifdef CONFIG_MCP_SINGLE
-	printf("\nCPU:  S5PV210@%ldMHz(%s)\n", get_ARMCLK()/1000000, ((result_set == 1) ? "OK" : "FAIL"));
+	printf("\nCPU:  S5PV210@%ldMHz\n", get_ARMCLK()/1000000);
 #else
-	printf("\nCPU:  S5PC110@%ldMHz(%s)\n", get_ARMCLK()/1000000, ((result_set == 1) ? "OK" : "FAIL"));
+	printf("\nCPU:  S5PC110@%ldMHz\n", get_ARMCLK()/1000000);
 #endif
 	printf("        APLL = %ldMHz, HclkMsys = %ldMHz, PclkMsys = %ldMHz\n",
 			get_FCLK()/1000000, get_HCLK()/1000000, get_PCLK()/1000000);
@@ -267,7 +231,6 @@ int print_cpuinfo(void)
 			get_HCLKD()/1000000, get_PCLKD()/1000000);
 	printf("		       HclkPsys = %ldMHz, PclkPsys = %ldMHz\n",
 			get_HCLKP()/1000000, get_PCLKP()/1000000);
-	printf("		       SCLKA2M  = %ldMHz\n", get_SCLKA2M()/1000000);
 #endif
 	puts("Serial = CLKUART ");
 

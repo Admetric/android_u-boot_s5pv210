@@ -41,16 +41,6 @@ _TEXT_BASE:
 lowlevel_init:
 	push	{lr}
 
-	/* check reset status  */
-	
-	ldr	r0, =(ELFIN_CLOCK_POWER_BASE+RST_STAT_OFFSET)
-	ldr	r1, [r0]
-	bic	r1, r1, #0xfff6ffff
-	cmp	r1, #0x10000
-	beq	wakeup_reset_pre
-	cmp	r1, #0x80000
-	beq	wakeup_reset_from_didle
-
 	/* IO Retention release */
 	ldr	r0, =(ELFIN_CLOCK_POWER_BASE + OTHERS_OFFSET)
 	ldr	r1, [r0]
@@ -63,7 +53,7 @@ lowlevel_init:
 	mov	r1, #0
 	str	r1, [r0]
 
-	/* SRAM(2MB) init for SMDKC110 */
+#if 0	/* SRAM(2MB) init for SMDKC110 */
 	/* GPJ1 SROM_ADDR_16to21 */
 	ldr	r0, =ELFIN_GPIO_BASE
 	
@@ -95,13 +85,16 @@ lowlevel_init:
 	ldr	r0, =ELFIN_SROM_BASE	/* 0xE8000000 */
 	mov	r1, #0x1
 	str	r1, [r0]
+#endif
 
+#if	0
 	/* PS_HOLD pin(GPH0_0) set to high */
 	ldr	r0, =(ELFIN_CLOCK_POWER_BASE + PS_HOLD_CONTROL_OFFSET)
 	ldr	r1, [r0]
 	orr	r1, r1, #0x300	
 	orr	r1, r1, #0x1	
 	str	r1, [r0]
+#endif
 
 	/* when we already run in ram, we don't need to relocate U-Boot.
 	 * and actually, memory controller must be configured before U-Boot
@@ -114,90 +107,59 @@ lowlevel_init:
 	cmp     r1, r2                  /* compare r0, r1                  */
 	beq     1f			/* r0 == r1 then skip sdram init   */
 
-	/* init PMIC chip */
-	bl PMIC_InitIp
+
+
+        ldr     r0, =ELFIN_GPIO_BASE    /* Set SYSPWRON 1 before setting PLL*/
+        ldr     r1, =0x00000100
+        str     r1, [r0, #GPH1CON_OFFSET]
+        ldr     r1, =0x4
+        str     r1, [r0, #GPH1DAT_OFFSET]
+        ldr     r1, =0x5545
+        str     r1, [r0, #GPH1PUD_OFFSET]
+
 
 	/* init system clock */
 	bl system_clock_init
 
-	/* Memory initialize */
 	bl mem_ctrl_asm_init
-	
+
+	bl mxm_v210_gpio_init
+
 1:
 	/* for UART */
 	bl uart_asm_init
 
 	bl tzpc_init
 
-#if defined(CONFIG_ONENAND)
-	bl onenandcon_init
-#endif
-
 #if defined(CONFIG_NAND)
 	/* simple init for NAND */
 	bl nand_asm_init
 #endif
 
-	/* check reset status  */
+	/* should be reviewed by system part */
 	
-	ldr	r0, =(ELFIN_CLOCK_POWER_BASE+RST_STAT_OFFSET)
-	ldr	r1, [r0]
-	bic	r1, r1, #0xfffeffff
-	cmp	r1, #0x10000
-	beq	wakeup_reset_pre
+	ldr     r0, =(ELFIN_CLOCK_POWER_BASE+RST_STAT_OFFSET)
+        ldr     r1, [r0]
+        bic     r1, r1, #0xfff6ffff
+        cmp     r1, #0x10000
+        beq     wakeup_reset
+	cmp	r1, #0x80000
+	beq	wakeup_reset
 
-	/* ABB disable */
-	ldr	r0, =0xE010C300
-	orr	r1, r1, #(0x1<<23)
-	str	r1, [r0]
-
-	/* Print 'K' */
 	ldr	r0, =ELFIN_UART_CONSOLE_BASE
 	ldr	r1, =0x4b4b4b4b
 	str	r1, [r0, #UTXH_OFFSET]
 
 	pop	{pc}
 
-wakeup_reset_from_didle:
-	/* Wait when APLL is locked */
-	ldr	r0, =ELFIN_CLOCK_POWER_BASE
-lockloop:
-	ldr	r1, [r0, #APLL_CON0_OFFSET]
-	and	r1, r1, #(1<<29)
-	cmp	r1, #(1<<29)
-	bne 	lockloop
-	beq	exit_wakeup
-
-wakeup_reset_pre:
-	mrc	p15, 0, r1, c1, c0, 1	@Read CP15 Auxiliary control register
-	and	r1, r1, #0x80000000	@Check L2RD is disable or not
-	cmp	r1, #0x80000000		
-	bne	wakeup_reset		@if L2RD is not disable jump to wakeup_reset 
-	
-	bl	disable_l2cache
-	bl	v7_flush_dcache_all
-	/* L2 cache enable at sleep.S of kernel
-	 * bl	enable_l2cache 
-	 */
-
 wakeup_reset:
-	/* init system clock */
-	bl system_clock_init
-	bl mem_ctrl_asm_init
-	bl tzpc_init
-#if defined(CONFIG_ONENAND)
-	bl onenandcon_init
-#endif
-#if defined(CONFIG_NAND)
-	bl nand_asm_init
-#endif
 
-exit_wakeup:
+
 	/*Load return address and jump to kernel*/
 	ldr	r0, =(INF_REG_BASE+INF_REG0_OFFSET)
-	ldr	r1, [r0]	/* r1 = physical address of s5pc110_cpu_resume function*/
+	ldr	r1, [r0]	/* r1 = physical address of s3c6400_cpu_resume function*/
 
-	mov	pc, r1		/*Jump to kernel */
+	mov	pc, r1		/*Jump to kernel (sleep-s3c6400.S)*/
 	nop
 	nop
 
@@ -213,13 +175,7 @@ system_clock_init:
 	ldr	r1, =0x0
 	str	r1, [r0, #CLK_SRC0_OFFSET]
 
-	ldr	r1,	=APLL_LOCKTIME_VAL
-	str	r1,	[r0, #APLL_LOCK_OFFSET]
-
 	/* Disable PLL */
-#if defined(CONFIG_CHECK_MPLL_LOCK)
-retryloop:
-#endif
 	ldr	r1, =0x0
 	str	r1, [r0, #APLL_CON0_OFFSET]
 	ldr	r1, =0x0
@@ -252,27 +208,6 @@ retryloop:
 1:	subs	r1, r1, #1
 	bne	1b
 
-#if defined(CONFIG_CHECK_MPLL_LOCK)
-	/* MPLL software workaround */
-	ldr	r1, [r0, #MPLL_CON_OFFSET]
-	orr     r1, r1, #(1<<28)
-	str	r1, [r0, #MPLL_CON_OFFSET]
-
-	mov	r1, #0x100
-1:	subs	r1, r1, #1
-	bne	1b
-
-	ldr	r1, [r0, #MPLL_CON_OFFSET]
-	and	r1, r1, #(1<<29)
-	cmp	r1, #(1<<29)
-	bne 	retryloop
-
-	/* H/W lock detect disable */
-	ldr	r1, [r0, #MPLL_CON_OFFSET]
-	bic     r1, r1, #(1<<28)
-	str	r1, [r0, #MPLL_CON_OFFSET]
-#endif
-
 	ldr	r1, [r0, #CLK_SRC0_OFFSET]
 	ldr	r2, =0x10001111
 	orr	r1, r1, r2
@@ -289,7 +224,6 @@ retryloop:
 	/* CLK_DIV6[31:28] -> 4=1/5, 3=1/4(166MHZ@667MHz), 2=1/3 */
 	ldr	r1, [r0, #CLK_DIV6_OFFSET]
 	bic	r1, r1, #(0xF<<28)
-	bic	r1, r1, #(0x7<<12)	@; ONENAND_RATIO: 0
 	orr	r1, r1, #0x30000000
 	str	r1, [r0, #CLK_DIV6_OFFSET]
 
@@ -304,7 +238,6 @@ retryloop:
 	/* CLK_DIV6[31:28] -> 4=1/5, 3=1/4(166MHZ@667MHz), 2=1/3 */
 	ldr	r1, [r0, #CLK_DIV6_OFFSET]
 	bic	r1, r1, #(0xF<<28)
-	bic	r1, r1, #(0x7<<12)	@; ONENAND_RATIO: 0
 	orr	r1, r1, #0x00000000
 	str	r1, [r0, #CLK_DIV6_OFFSET]	
 
@@ -319,20 +252,241 @@ retryloop:
 	/* CLK_DIV6[31:28] -> 4=1/5, 3=1/4(166MHZ@667MHz), 2=1/3 */
 	ldr	r1, [r0, #CLK_DIV6_OFFSET]
 	bic	r1, r1, #(0xF<<28)
-	bic	r1, r1, #(0x7<<12)	@; ONENAND_RATIO: 0
 	orr	r1, r1, #0x30000000
-	str	r1, [r0, #CLK_DIV6_OFFSET]
-
-#elif defined (CONFIG_MCP_SINGLE)
-
-	/* CLK_DIV6 */
-	ldr	r1, [r0, #CLK_DIV6_OFFSET]
-	bic	r1, r1, #(0x7<<12)	@; ONENAND_RATIO: 0
 	str	r1, [r0, #CLK_DIV6_OFFSET]
 
 #endif	
 
 	mov	pc, lr
+
+/*
+ * Setting MXM-V210 GPIO
+ */
+
+mxm_v210_gpio_init:
+
+        ldr     r0, =ELFIN_GPIO_BASE
+        ldr     r1, =0x22222222
+        str     r1, [r0, #GPA0CON_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPA0DAT_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPA0PUD_OFFSET]
+        ldr     r1, =0x00002222
+        str     r1, [r0, #GPA1CON_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPA1DAT_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPA1PUD_OFFSET]
+        ldr     r1, =0x11011111
+        str     r1, [r0, #GPBCON_OFFSET]
+        ldr     r1, =0x10
+        str     r1, [r0, #GPBDAT_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPBPUD_OFFSET]
+        ldr     r1, =0x00044444
+        str     r1, [r0, #GPC0CON_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPC0DAT_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPC0PUD_OFFSET]
+        ldr     r1, =0x00022202
+        str     r1, [r0, #GPC1CON_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPC1DAT_OFFSET]
+        ldr     r1, =0x4
+        str     r1, [r0, #GPC1PUD_OFFSET]
+        ldr     r1, =0x00002220
+        str     r1, [r0, #GPD0CON_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPD0DAT_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPD0PUD_OFFSET]
+        ldr     r1, =0x00222222
+        str     r1, [r0, #GPD1CON_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPD1DAT_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPD1PUD_OFFSET]
+        ldr     r1, =0x22222222
+        str     r1, [r0, #GPE0CON_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPE0DAT_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPE0PUD_OFFSET]
+        ldr     r1, =0x00022222
+        str     r1, [r0, #GPE1CON_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPE1DAT_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPE1PUD_OFFSET]
+        ldr     r1, =0x22222222
+        str     r1, [r0, #GPF0CON_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPF0DAT_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPF0PUD_OFFSET]
+        ldr     r1, =0x22222222
+        str     r1, [r0, #GPF1CON_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPF1DAT_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPF1PUD_OFFSET]
+        ldr     r1, =0x22222222
+        str     r1, [r0, #GPF2CON_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPF2DAT_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPF2PUD_OFFSET]
+        ldr     r1, =0x00002222
+        str     r1, [r0, #GPF3CON_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPF3DAT_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPF3PUD_OFFSET]
+        ldr     r1, =0x02222222
+        str     r1, [r0, #GPG0CON_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPG0DAT_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPG0PUD_OFFSET]
+        ldr     r1, =0x02222222
+        str     r1, [r0, #GPG1CON_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPG1DAT_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPG1PUD_OFFSET]
+        ldr     r1, =0x02222222
+        str     r1, [r0, #GPG2CON_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPG2DAT_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPG2PUD_OFFSET]
+        ldr     r1, =0x02222222
+        str     r1, [r0, #GPG3CON_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPG3DAT_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPG3PUD_OFFSET]
+        ldr     r1, =0x00000000
+        str     r1, [r0, #GPH0CON_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPH0DAT_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPH0PUD_OFFSET]
+        ldr     r1, =0x114411FF
+        str     r1, [r0, #GPH1CON_OFFSET]
+        ldr     r1, =0xCC
+        str     r1, [r0, #GPH1DAT_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPH1PUD_OFFSET]
+        ldr     r1, =0x11110111
+        str     r1, [r0, #GPH2CON_OFFSET]
+        ldr     r1, =0x6
+        str     r1, [r0, #GPH2DAT_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPH2PUD_OFFSET]
+        ldr     r1, =0x01101110
+        str     r1, [r0, #GPH3CON_OFFSET]
+        ldr     r1, =0x62
+        str     r1, [r0, #GPH3DAT_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPH3PUD_OFFSET]
+        ldr     r1, =0x00000000
+        str     r1, [r0, #GPICON_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPIDAT_OFFSET]
+        ldr     r1, =0x1555
+        str     r1, [r0, #GPIPUD_OFFSET]
+        ldr     r1, =0x22222222
+        str     r1, [r0, #GPJ0CON_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPJ0DAT_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPJ0PUD_OFFSET]
+        ldr     r1, =0x00222222
+        str     r1, [r0, #GPJ1CON_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPJ1DAT_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPJ1PUD_OFFSET]
+        ldr     r1, =0x22222222
+        str     r1, [r0, #GPJ2CON_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPJ2DAT_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPJ2PUD_OFFSET]
+        ldr     r1, =0x22222222
+        str     r1, [r0, #GPJ3CON_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPJ3DAT_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPJ3PUD_OFFSET]
+        ldr     r1, =0x22222222
+        str     r1, [r0, #GPJ4CON_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPJ4DAT_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #GPJ4PUD_OFFSET]
+        ldr     r1, =0x22222322
+        str     r1, [r0, #MP01CON_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #MP01DAT_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #MP01PUD_OFFSET]
+        ldr     r1, =0x00002222
+        str     r1, [r0, #MP02CON_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #MP02DAT_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #MP02PUD_OFFSET]
+        ldr     r1, =0x00022222
+        str     r1, [r0, #MP03CON_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #MP03DAT_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #MP03PUD_OFFSET]
+        ldr     r1, =0x22222222
+        str     r1, [r0, #MP04CON_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #MP04DAT_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #MP04PUD_OFFSET]
+        ldr     r1, =0x22222222
+        str     r1, [r0, #MP05CON_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #MP05DAT_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #MP05PUD_OFFSET]
+        ldr     r1, =0x22222222
+        str     r1, [r0, #MP06CON_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #MP06DAT_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #MP06PUD_OFFSET]
+        ldr     r1, =0x22222222
+        str     r1, [r0, #MP07CON_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #MP07DAT_OFFSET]
+        ldr     r1, =0x0
+        str     r1, [r0, #MP07PUD_OFFSET]
+        ldr     r1, =0x6480
+        str     r1, [r0, #ETC2PUD_OFFSET]
+
+
+        ldr     r1, =0x4C
+        str     r1, [r0, #GPH1DAT_OFFSET]
+
+/*      wait 200us  reset  dm9000       */
+        mov     r1, #0x10000
+1:      subs    r1, r1, #1
+        bne     1b
+
+        ldr     r1, =0xCC
+        str     r1, [r0, #GPH1DAT_OFFSET]
+
+        mov     pc, lr
+
 
 
 /*
@@ -382,7 +536,7 @@ uart_asm_init:
 	mov	pc, lr
 
 /*
- * Nand Interface Init for SMDKC110
+ * Nand Interface Init for SMDKC100
  */
 nand_asm_init:
 
@@ -441,6 +595,7 @@ nand_asm_init:
 /*
  * Setting TZPC[TrustZone Protection Controller]
  */
+
 tzpc_init:
 
 	ldr	r0, =ELFIN_TZPC0_BASE
@@ -468,55 +623,6 @@ tzpc_init:
 	str	r1, [r0, #TZPC_DECPROT2SET_OFFSET] 	
 
  	mov	pc, lr
-
-/*
- * OneNAND Interface Init
- */
-onenandcon_init:
-
-	@; GPIO setting for OneNAND
-	ldr	r0, =ELFIN_GPIO_BASE	@0xE0200000
-	ldr	r1, [r0, #MP01CON_OFFSET]
-	orr	r1, r1, #0x00550000
-	str	r1, [r0, #MP01CON_OFFSET]
-
-	ldr	r1, [r0, #MP03CON_OFFSET]
-	orr	r1, r1, #0x0550
-	orr	r1, r1, #0x00550000
-	str	r1, [r0, #MP03CON_OFFSET]
-
-	ldr	r1, =0xFFFF
-	str	r1, [r0, #MP01DRV_SR_OFFSET]
-	str	r1, [r0, #MP03DRV_SR_OFFSET]
-	str	r1, [r0, #MP06DRV_SR_OFFSET]
-	str	r1, [r0, #MP07DRV_SR_OFFSET]
-
-wait_orwb:
-	@; Read ONENAND_IF_STATUS
-	ldr	r0, =ELFIN_ONENANDCON_BASE	@; 0xB0600000
-	ldr	r1, [r0, #ONENAND_IF_STATUS_OFFSET]
-	bic	r1, r1, #0xFFFFFFFE
-	cmp	r1, #0x0
-
-	@; ORWB != 0x0
-	bne	wait_orwb
-
-	@; write new configuration to onenand system configuration1 register
-	ldr	r1, =0xF006			@; Sync.
-	ldr	r2, =(ELFIN_ONENAND_BASE+0x1E442)	@; 0x1E442(REG_SYS_CONF1)
-	strh	r1, [r2]
-
-	@; read one dummy halfword
-	ldrh	r1, [r2]
-	ldrh	r1, [r2]
-
-	@; write new configuration to ONENAND_IF_CTRL
-	ldr	r0, =ELFIN_ONENANDCON_BASE	@; 0xB0600000
-	@;ldr	r1, =0x2F006			@; ONENAND_IF_CTRL_REG_VAL (GCE off)
-	ldr	r1, =0x402F006			@; ONENAND_IF_CTRL_REG_VAL (GCE on)
-	str	r1, [r0, #ONENAND_IF_CTRL_OFFSET]
-
-	mov	pc, lr
 
 
 #ifdef CONFIG_ENABLE_MMU
@@ -635,16 +741,12 @@ mmu_table:
 
 	.set __base,0x300
 	// should be accessed
-	.rept 0x350 - 0x300
+	.rept 0x400 - 0x300
 	FL_SECTION_ENTRY __base,3,0,1,1
 	.set __base,__base+1
 	.endr
 
-	// Not Allowed
-	.rept 0x400 - 0x350
-	.word 0x00000000
-	.endr
-
+	// DRAM - DMC1 area - used for STL_write : djpark (20090729)
 	.set __base,0x400
 	// should be accessed
 	.rept 0x500 - 0x400
@@ -663,6 +765,10 @@ mmu_table:
 	.set __base,__base+1
 	.endr
 
+/*	.rept 0xc00 - 0xb00
+	.word 0x00000000
+	.endr */
+
 	.set __base,0xB00
 	.rept 0xc00 - 0xb00
 	FL_SECTION_ENTRY __base,3,0,0,0
@@ -670,16 +776,16 @@ mmu_table:
 	.endr
 
 	.set __base,0x300
-	// 80MB for SDRAM with cacheable
-	.rept 0xC50 - 0xC00
+	// 256MB for SDRAM with cacheable
+	.rept 0xD00 - 0xC00
 	FL_SECTION_ENTRY __base,3,0,1,1
 	.set __base,__base+1
 	.endr
 
-	// Not Allowed
-	.rept 0xD00 - 0xC50
-	.word 0x00000000
-	.endr
+	// access is not allowed.
+	@.rept 0xD00 - 0xC80
+	@.word 0x00000000
+	@.endr
 
 	.set __base,0xD00
 	// 1:1 mapping for debugging with non-cacheable

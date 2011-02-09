@@ -58,8 +58,8 @@ void movi_write_bl1(ulong addr)
 	tmp = *(ulong*)addr;
 	*(ulong*)addr = checksum;
 			
-	movi_write(raw_area_control.image[1].start_blk, 
-		raw_area_control.image[1].used_blk, src);
+	movi_write(raw_area_control.image[0].start_blk, 
+		raw_area_control.image[0].used_blk, src);
 
 	*(ulong*)addr = tmp;
 }

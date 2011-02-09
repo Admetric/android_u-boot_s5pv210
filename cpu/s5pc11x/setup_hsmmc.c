@@ -4,6 +4,11 @@
 #include <mmc.h>
 #include <s3c_hsmmc.h>
 
+#define S3C_SDHCI_CTRL3_FCSELTX_INVERT (0)
+#define S3C_SDHCI_CTRL3_FCSELTX_BASIC (S3C_SDHCI_CTRL3_FCSEL3 | S3C_SDHCI_CTRL3_FCSEL2)
+#define S3C_SDHCI_CTRL3_FCSELRX_INVERT (0)
+#define S3C_SDHCI_CTRL3_FCSELRX_BASIC (S3C_SDHCI_CTRL3_FCSEL1 | S3C_SDHCI_CTRL3_FCSEL0)
+
 void setup_hsmmc_clock(void)
 {
 	u32 tmp;
@@ -33,7 +38,7 @@ void setup_hsmmc_clock(void)
 	/* MMC1 clock div */
 	tmp = CLK_DIV4_REG & ~(0x000000f0);
 	CLK_DIV4_REG = tmp | i<<4;
-#endif	
+#endif
 
 #ifdef USE_MMC2
 	/* MMC2 clock src = SCLKMPLL */
@@ -53,7 +58,7 @@ void setup_hsmmc_clock(void)
 	/* MMC3 clock div */
 	tmp = CLK_DIV4_REG & ~(0x00000f00);
 	CLK_DIV4_REG = tmp | i<<12;
-#endif	
+#endif
 }
 
 /*
@@ -109,27 +114,39 @@ void setup_sdhci0_cfg_card(struct sdhci_host *host)
 	u32 ctrl2;
 	u32 ctrl3;
 
-	/* don't need to alter anything acording to card-type */
 	writel(S3C64XX_SDHCI_CONTROL4_DRIVE_9mA, host->ioaddr + S3C64XX_SDHCI_CONTROL4);
 
 	ctrl2 = readl(host->ioaddr + S3C_SDHCI_CONTROL2);
-
 	ctrl2 |= (S3C64XX_SDHCI_CTRL2_ENSTAASYNCCLR |
 		  S3C64XX_SDHCI_CTRL2_ENCMDCNFMSK |
 		  S3C_SDHCI_CTRL2_DFCNT_NONE |
 		  S3C_SDHCI_CTRL2_ENCLKOUTHOLD);
 
-	if (host->clock <= 500000) {
-		ctrl2 &= ~(S3C_SDHCI_CTRL2_ENFBCLKTX |
-			S3C_SDHCI_CTRL2_ENFBCLKRX);
+
+        if (host->clock <= (400 * 1024)) {
+		ctrl2 &= ~(S3C_SDHCI_CTRL2_ENFBCLKTX | S3C_SDHCI_CTRL2_ENFBCLKRX);
 		ctrl3 = 0;
 	} else {
-		ctrl2 |= S3C_SDHCI_CTRL2_ENFBCLKTX |
-			S3C_SDHCI_CTRL2_ENFBCLKRX;
-		ctrl3 = S3C_SDHCI_CTRL3_FCSEL3 | S3C_SDHCI_CTRL3_FCSEL2;
+		u32 range_start;
+		u32 range_end;
+
+		ctrl2 |= (S3C_SDHCI_CTRL2_ENFBCLKTX | S3C_SDHCI_CTRL2_ENFBCLKRX);
+
+		if (host->mmc->version & MMC_VERSION_MMC)       /* MMC */
+			range_start = 20 * 1024 * 1024;
+		else						/* SD */
+			range_start = 25 * 1024 * 1024;
+
+		range_end = 37 * 1024 * 1024;
+
+		if ((host->clock > range_start) && (host->clock < range_end))
+			ctrl3 = (S3C_SDHCI_CTRL3_FCSELTX_BASIC |
+				 S3C_SDHCI_CTRL3_FCSELRX_BASIC);
+		else
+			ctrl3 = (S3C_SDHCI_CTRL3_FCSELTX_BASIC |
+				 S3C_SDHCI_CTRL3_FCSELRX_INVERT);
 	}
 
 	writel(ctrl2, host->ioaddr + S3C_SDHCI_CONTROL2);
 	writel(ctrl3, host->ioaddr + S3C_SDHCI_CONTROL3);
 }
-

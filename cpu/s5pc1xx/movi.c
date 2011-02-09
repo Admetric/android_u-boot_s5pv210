@@ -102,8 +102,8 @@ void movi_read_env(ulong addr)
 
 void movi_write_bl1(ulong addr)
 {
-	movi_write(raw_area_control.image[1].start_blk, 
-		raw_area_control.image[1].used_blk, addr);
+	movi_write(raw_area_control.image[0].start_blk, 
+		raw_area_control.image[0].used_blk, addr);
 }
 
 #endif /* !CONFIG_GENERIC_MMC */

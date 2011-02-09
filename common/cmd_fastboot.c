@@ -1,12 +1,10 @@
 /*
- * Copyright (C) 2010 Samsung Electronics Co. Ltd
+ * Copyright (C) 2010 Samsung S.LSI Android BSP Team
  *
  * Many parts of this program were copied from the work of Windriver.
  * Major modifications are as follows:
  * - Adding default partition table.
  * - Supporting OneNAND device.
- * - Supporting SDMMC device.
- * - Adding new command, sdfuse.
  * - Removing Lock scheme.
  * - Removing direct flash operations because they are implemented at others.
  * - Fixing several bugs
@@ -73,42 +71,24 @@
 #include <common.h>
 #include <command.h>
 #include <fastboot.h>
-#if defined(CFG_FASTBOOT_SDMMCBSP)
-#include <mmc.h>
-#endif
 
 #if (CONFIG_FASTBOOT)
 
 /* Use do_reset for fastboot's 'reboot' command */
 extern int do_reset (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
-/* Use do_fat_fsload for direct image fusing from sd card */
-extern int do_fat_fsload (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
+/* Use do_nand for fastboot's flash commands */
+extern int do_nand(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[]);
+/* Use do_onenand for fastboot's flash commands */
+extern int do_onenand(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[]);
 /* Use do_setenv and do_saveenv to permenantly save data */
 int do_saveenv (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
 int do_setenv ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
 /* Use do_bootm and do_go for fastboot's 'boot' command */
 int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
 int do_go (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
-
-#if defined(CFG_FASTBOOT_ONENANDBSP)
-#define CFG_FASTBOOT_FLASHCMD			do_onenand
-/* Use do_onenand for fastboot's flash commands */
-extern int do_onenand(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[]);
-#elif defined(CFG_FASTBOOT_NANDBSP)
-#define CFG_FASTBOOT_FLASHCMD			do_nand
-/* Use do_nand for fastboot's flash commands */
-extern int do_nand(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[]);
-#elif defined(CFG_FASTBOOT_SDMMCBSP)
-int do_movi(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[]);
-int do_mmcops(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[]);
-int get_mmc_part_info(char *device_name, int part_num, int *start, int *count, unsigned char *pid);
-struct mmc *find_mmc_device(int dev_num);
-#endif
-
 /* LCD */
 void LCD_turnon(void);
 void LCD_setfgcolor(unsigned int color);
-void LCD_setleftcolor(unsigned int color);
 void LCD_setprogress(int percentage);
 
 /* Forward decl */
@@ -154,7 +134,6 @@ static void set_env(char *var, char *val)
 static void save_env(struct fastboot_ptentry *ptn,
 		     char *var, char *val)
 {
-#ifndef CFG_FASTBOOT_SDMMCBSP
 	char start[32], length[32];
 	char ecc_type[32];
 
@@ -189,7 +168,6 @@ static void save_env(struct fastboot_ptentry *ptn,
 	CFG_FASTBOOT_FLASHCMD(NULL, 0, 4, unlock);
 	do_saveenv(NULL, 0, 1, saveenv);
 	CFG_FASTBOOT_FLASHCMD(NULL, 0, 4, lock);
-#endif
 }
 
 #if 0
@@ -492,7 +470,6 @@ static int saveenv_to_ptn(struct fastboot_ptentry *ptn, char *err_string)
 }
 
 static int write_to_ptn(struct fastboot_ptentry *ptn, unsigned int addr, unsigned int size)
-#if defined(CFG_FASTBOOT_ONENANDBSP) || defined(CFG_FASTBOOT_NANDBSP)
 {
 	int ret = 1;
 	char start[32], length[32];
@@ -558,73 +535,6 @@ static int write_to_ptn(struct fastboot_ptentry *ptn, unsigned int addr, unsigne
 
 	return ret;
 }
-#elif defined(CFG_FASTBOOT_SDMMCBSP)
-{
-	int ret = 1;
-	char device[32], part[32];
-	char start[32], length[32], buffer[32];
-
-	char *argv[6]  = { NULL, "write", NULL, NULL, NULL, NULL, };
-	int argc = 0;
-
-	if ((ptn->length != 0) && (size > ptn->length))
-	{
-		printf("Error: Image size is larger than partition size!\n");
-		return 1;
-	}
-
-	printf("flashing '%s'\n", ptn->name);
-
-	if (ptn->flags & FASTBOOT_PTENTRY_FLAGS_USE_MMC_CMD)
-	{
-		argv[2] = device;
-		argv[3] = buffer;
-		argv[4] = start;
-		argv[5] = length;
-
-		sprintf(device, "mmc %d", 1);
-		sprintf(buffer, "0x%x", addr);
-		sprintf(start, "0x%x", (ptn->start / CFG_FASTBOOT_SDMMC_BLOCKSIZE));
-		sprintf(length, "0x%x", (ptn->length / CFG_FASTBOOT_SDMMC_BLOCKSIZE));
-
-		ret = do_mmcops(NULL, 0, 6, argv);
-	}
-	else if (ptn->flags & FASTBOOT_PTENTRY_FLAGS_USE_MOVI_CMD)
-	{
-		argv[2] = part;
-		argv[3] = buffer;
-
-		argc = 4;
-
-		/* use the partition name that can be understood by a command, movi */
-		if (!strcmp(ptn->name, "bootloader"))
-		{
-			strncpy(part, "u-boot", 7);
-		}
-		else if (!strcmp(ptn->name, "ramdisk"))
-		{
-			strncpy(part, "rootfs", 7);
-			argv[4] = length;
-			sprintf(length, "0x%x",
-				((size + CFG_FASTBOOT_SDMMC_BLOCKSIZE - 1)
-				/ CFG_FASTBOOT_SDMMC_BLOCKSIZE ) * CFG_FASTBOOT_SDMMC_BLOCKSIZE);
-			argc++;
-		}
-		else	/* kernel, fwbl1 */
-		{
-			argv[2] = ptn->name;
-		}
-		sprintf(buffer, "0x%x", addr);
-
-		ret = do_movi(NULL, 0, argc, argv);
-
-		/* the return value of do_movi is different from usual commands. Hence the followings. */
-		ret = 1 - ret;
-	}
-
-	return ret;
-}
-#endif
 
 static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 {
@@ -676,10 +586,41 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 
 				printf ("\ndownloading of %d bytes finished\n", download_bytes);
 				LCD_setprogress(0);
+
+#if 0
+				/* Pad to block length
+				   In most cases, padding the download to be
+				   block aligned is correct. The exception is
+				   when the following flash writes to the oob
+				   area.  This happens when the image is a
+				   YAFFS image.  Since we do not know what
+				   the download is until it is flashed,
+				   go ahead and pad it, but save the true
+				   size in case if should have
+				   been unpadded */
+				download_bytes_unpadded = download_bytes;
+				if (interface.nand_block_size)
+				{
+					if (download_bytes % interface.nand_block_size)
+					{
+						unsigned int pad = interface.nand_block_size - (download_bytes % interface.nand_block_size);
+						unsigned int i;
+						
+						for (i = 0; i < pad; i++) 
+						{
+							if (download_bytes >= interface.transfer_buffer_size)
+								break;
+							
+							interface.transfer_buffer[download_bytes] = 0;
+							download_bytes++;
+						}
+					}
+				}
+#endif
 			}
 
 			/* Provide some feedback */
-			if (download_bytes && download_size &&
+			if (download_bytes &&
 			    0 == (download_bytes & (0x100000 - 1)))
 			{
 				/* Some feeback that the download is happening */
@@ -788,35 +729,11 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 
 			char start[32], length[32];
 			int status;
-
-#if defined(CFG_FASTBOOT_SDMMCBSP)
-			printf("erasing(formatting) '%s'\n", ptn->name);
-#else
+			
 			printf("erasing '%s'\n", ptn->name);
-#endif
 			LCD_setfgcolor(0x7FFFD4);
 			LCD_setprogress(100);
 
-#if defined(CFG_FASTBOOT_SDMMCBSP)
-			// Temporary (but, simplest) implementation
-			char run_cmd[80];
-			status = 1;
-			if (!strcmp(ptn->name, "userdata"))
-			{
-				sprintf(run_cmd, "ext3format mmc 0:3");
-				status = run_command(run_cmd, 0);
-			}
-			else if (!strcmp(ptn->name, "cache"))
-			{
-				sprintf(run_cmd, "ext3format mmc 0:4");
-				status = run_command(run_cmd, 0);
-			}
-			else if (!strcmp(ptn->name, "fat"))
-			{
-				sprintf(run_cmd, "fatformat mmc 0:1");
-				status = run_command(run_cmd, 0);
-			}
-#else
 			int argc_erase = 4;
 			/* do_nand and do_onenand do not check argv[0] */
 			char *argv_erase[5]  = { NULL, "erase",  NULL, NULL, NULL, };
@@ -831,7 +748,6 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 				argc_erase = 3;
 
 			status = CFG_FASTBOOT_FLASHCMD(NULL, 0, argc_erase, argv_erase);
-#endif
 
 			if (status)
 			{
@@ -1012,7 +928,7 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 				printf("Ramdisk size: %08x\n", fb_hdr->ramdisk_size);
 
 				ptn = fastboot_flash_find_ptn("kernel");
-				if (ptn->length && fb_hdr->kernel_size > ptn->length)
+				if (fb_hdr->kernel_size > ptn->length)
 				{
 					sprintf(response, "FAILimage too large for partition");
 					goto send_tx_status;
@@ -1025,7 +941,7 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 					1 + (fb_hdr->kernel_size + CFG_FASTBOOT_MKBOOTIMAGE_PAGE_SIZE - 1)
 						/ CFG_FASTBOOT_MKBOOTIMAGE_PAGE_SIZE;
 				ptn = fastboot_flash_find_ptn("ramdisk");
-				if (ptn->length && fb_hdr->ramdisk_size > ptn->length)
+				if (fb_hdr->ramdisk_size > ptn->length)
 				{
 					sprintf(response, "FAILimage too large for partition");
 					goto send_tx_status;
@@ -1284,10 +1200,17 @@ static int add_partition_from_environment(char *s, char **retptr)
 	return 0;
 }
 
-static int set_partition_table()
-#if defined(CFG_FASTBOOT_ONENANDBSP) || defined(CFG_FASTBOOT_NANDBSP)
+
+
+int do_fastboot (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 {
+	int ret = 1;
 	char fbparts[4096], *env;
+	int check_timeout = 0;
+	uint64_t timeout_endtime = 0;
+	uint64_t timeout_ticks = 0;
+	long timeout_seconds = -1;
+	int continue_from_disconnect = 0;
 
 	/*
 	 * Place the runtime partitions at the end of the
@@ -1360,119 +1283,6 @@ static int set_partition_table()
 #if 1 // Debug
 	fastboot_flash_dump_ptn();
 #endif
-
-	LCD_setleftcolor(0x1024C0);
-
-	return 0;
-}
-#elif defined(CFG_FASTBOOT_SDMMCBSP)
-{
-	int start, count;
-	unsigned char pid;
-
-	pcount = 0;
-
-#if defined(CONFIG_FUSED)
-	/* FW BL1 for fused chip */
-	strcpy(ptable[pcount].name, "fwbl1");
-	ptable[pcount].start = 0;
-	ptable[pcount].length = 0;
-	ptable[pcount].flags = FASTBOOT_PTENTRY_FLAGS_USE_MOVI_CMD;
-	pcount++;
-#endif
-
-	/* Bootloader */
-	strcpy(ptable[pcount].name, "bootloader");
-	ptable[pcount].start = 0;
-	ptable[pcount].length = 0;
-	ptable[pcount].flags = FASTBOOT_PTENTRY_FLAGS_USE_MOVI_CMD;
-	pcount++;
-
-	/* Kernel */
-	strcpy(ptable[pcount].name, "kernel");
-	ptable[pcount].start = 0;
-	ptable[pcount].length = 0;
-	ptable[pcount].flags = FASTBOOT_PTENTRY_FLAGS_USE_MOVI_CMD;
-	pcount++;
-
-	/* Ramdisk */
-	strcpy(ptable[pcount].name, "ramdisk");
-	ptable[pcount].start = 0;
-	ptable[pcount].length = 0x300000;
-	ptable[pcount].flags = FASTBOOT_PTENTRY_FLAGS_USE_MOVI_CMD;
-	pcount++;
-
-	/* System */
-	get_mmc_part_info("0", 2, &start, &count, &pid);
-	if (pid != 0x83)
-		goto part_type_error;
-	strcpy(ptable[pcount].name, "system");
-	ptable[pcount].start = start * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
-	ptable[pcount].length = count * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
-	ptable[pcount].flags = FASTBOOT_PTENTRY_FLAGS_USE_MMC_CMD;
-	pcount++;
-
-	/* Data */
-	get_mmc_part_info("0", 3, &start, &count, &pid);
-	if (pid != 0x83)
-		goto part_type_error;
-	strcpy(ptable[pcount].name, "userdata");
-	ptable[pcount].start = start * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
-	ptable[pcount].length = count * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
-	ptable[pcount].flags = FASTBOOT_PTENTRY_FLAGS_USE_MMC_CMD;
-	pcount++;
-
-	/* Cache */
-	get_mmc_part_info("0", 4, &start, &count, &pid);
-	if (pid != 0x83)
-		goto part_type_error;
-	strcpy(ptable[pcount].name, "cache");
-	ptable[pcount].start = start * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
-	ptable[pcount].length = count * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
-	ptable[pcount].flags = FASTBOOT_PTENTRY_FLAGS_USE_MMC_CMD;
-	pcount++;
-
-	/* fat */
-	get_mmc_part_info("0", 1, &start, &count, &pid);
-	if (pid != 0xc)
-		goto part_type_error;
-	strcpy(ptable[pcount].name, "fat");
-	ptable[pcount].start = start * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
-	ptable[pcount].length = count * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
-	ptable[pcount].flags = FASTBOOT_PTENTRY_FLAGS_USE_MMC_CMD;
-	pcount++;
-
-#if 1 // Debug
-	fastboot_flash_dump_ptn();
-#endif
-
-	LCD_setleftcolor(0x8a2be2);
-
-	return 0;
-
-part_type_error:
-	printf("Error: No MBR is found at SD/MMC.\n");
-	printf("Hint: use fdisk command to make partitions.\n");
-
-	return -1;
-}
-#else
-#error one of CFG_FASTBOOT_ONENANDBSP, CFG_FASTBOOT_NANDBSP or CFG_FASTBOOT_SDMMCBSP should is defined.
-#endif
-
-
-int do_fastboot (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
-{
-	int ret = 1;
-	int check_timeout = 0;
-	uint64_t timeout_endtime = 0;
-	uint64_t timeout_ticks = 0;
-	long timeout_seconds = -1;
-	int continue_from_disconnect = 0;
-
-	if (set_partition_table())
-		return 1;
-
 
 	/* Time out */
 	if (2 == argc)
@@ -1568,10 +1378,6 @@ int do_fastboot (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		/* Reset the board specific support */
 		fastboot_shutdown();
 
-		LCD_setfgcolor(0x000010);
-		LCD_setleftcolor(0x000010);
-		LCD_setprogress(100);
-
 		/* restart the loop if a disconnect was detected */
 	} while (continue_from_disconnect);
 
@@ -1588,197 +1394,6 @@ U_BOOT_CMD(
 );
 
 
-#define CONFIG_FASTBOOT_SDFUSE
-#ifdef CONFIG_FASTBOOT_SDFUSE
-
-#include <part.h>
-#include <fat.h>
-#define CFG_FASTBOOT_SDFUSE_DIR		"/sdfuse"
-#ifdef CFG_FASTBOOT_SDMMCBSP
-#define CFG_FASTBOOT_SDFUSE_MMCDEV	1
-#else
-#define CFG_FASTBOOT_SDFUSE_MMCDEV	0
-#endif
-#define CFG_FASTBOOT_SDFUSE_MMCPART	1
-/*
- * part : partition name (This should be a defined name at ptable)
- * file : file to read
- */
-static int update_from_sd (char *part, char *file)
-{
-	int ret = 1;
-
-	/* Read file */
-	if (file != NULL)
-	{
-		long size;
-		unsigned long offset;
-		unsigned long count;
-		char filename[32];
-		block_dev_desc_t *dev_desc=NULL;
-
-		printf("Partition: %s, File: %s/%s\n", part, CFG_FASTBOOT_SDFUSE_DIR, file);
-		LCD_setfgcolor(0x2E8B57);
-		LCD_setprogress(100);
-		dev_desc = get_dev("mmc", CFG_FASTBOOT_SDFUSE_MMCDEV);
-		if (dev_desc == NULL) {
-			printf ("** Invalid boot device **\n");
-			return 1;
-		}
-		if (fat_register_device(dev_desc, CFG_FASTBOOT_SDFUSE_MMCPART) != 0) {
-			printf ("** Invalid partition **\n");
-			return 1;
-		}
-		sprintf(filename, "%s/%s", CFG_FASTBOOT_SDFUSE_DIR, file);
-		offset = CFG_FASTBOOT_TRANSFER_BUFFER;
-		count = 0;
-		size = file_fat_read (filename, (unsigned char *) offset, count);
-
-		if (size == -1) {
-			printf("Failed to read %s\n", filename);
-			return 1;
-		}
-
-		download_size = 0;	// should be 0
-		download_bytes = size;
-
-		printf ("%ld (0x%08x) bytes read\n", size, size);
-	}
-	else {
-		printf("Partition: %s\n", part);
-
-		download_size = 0;	// should be 0
-		download_bytes = 0;
-	}
-
-	/* Write image into partition */
-	/* If file is empty or NULL, just erase the part. */
-	{
-		char command[32];
-
-		if (download_bytes == 0)
-			sprintf(command, "%s:%s", "erase", part);
-		else
-			sprintf(command, "%s:%s", "flash", part);
-
-		ret = rx_handler(command, sizeof(command));
-	}
-
-	return ret;
-}
-
-/* SD Fusing : read images from FAT partition of SD Card, and write it to boot device.
- * 
- * NOTE
- * - sdfuse is not a original code of fastboot
- * - Fusing image from SD Card is not a original part of Fastboot protocol.
- * - This command implemented at this file to re-use an existing code of fastboot */
-int do_sdfuse (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
-{
-	int ret = 1;
-	int enable_reset = 0;
-	struct mmc *mmc = find_mmc_device(CFG_FASTBOOT_SDFUSE_MMCDEV);
-
-	if (mmc_init(mmc)) {
-		printf("sdmmc init is failed.\n");
-	}
-
-	interface.nand_block_size	= CFG_FASTBOOT_PAGESIZE * 64;
-	interface.transfer_buffer	= (unsigned char *) CFG_FASTBOOT_TRANSFER_BUFFER;
-	interface.transfer_buffer_size	= CFG_FASTBOOT_TRANSFER_BUFFER_SIZE;
-
-	printf("[Fusing Image from SD Card.]\n");
-
-	if (set_partition_table())
-		return 1;
-
-	if ((argc == 2) && !strcmp(argv[1], "info"))
-	{
-		printf("sdfuse will read images from the followings:\n");
-		printf(" sd/mmc device  : mmc %d:%d\n",
-			CFG_FASTBOOT_SDFUSE_MMCDEV, CFG_FASTBOOT_SDFUSE_MMCPART);
-		printf(" directory      : %s\n", CFG_FASTBOOT_SDFUSE_DIR);
-		printf(" booting device : %s\n",
-#if defined(CFG_FASTBOOT_ONENANDBSP)
-			"OneNAND"
-#elif defined(CFG_FASTBOOT_NANDBSP)
-			"NAND"
-#elif defined(CFG_FASTBOOT_SDMMCBSP)
-			"MoviNAND"
-#else
-#error "Unknown booting device!"
-#endif
-#if defined(CONFIG_FUSED)
-			" (on eFused Chip)"
-#endif
-		);
-		return 0;
-	}
-	else if ((argc == 2) && !strcmp(argv[1], "flashall"))
-	{
-		LCD_turnon();
-
-		if (update_from_sd("boot", "boot.img"))
-			goto err_sdfuse;
-		if (update_from_sd("system", "system.img"))
-			goto err_sdfuse;
-		if (update_from_sd("userdata", NULL))
-			goto err_sdfuse;
-		if (update_from_sd("cache", NULL))
-			goto err_sdfuse;
-
-		enable_reset = 1;
-		ret = 0;
-	}
-	else if ((argc == 4) && !strcmp(argv[1], "flash"))
-	{
-		LCD_turnon();
-
-		if (update_from_sd(argv[2], argv[3]))
-			goto err_sdfuse;
-
-		ret = 0;
-	}
-	else if ((argc == 3) && !strcmp(argv[1], "erase"))
-	{
-		LCD_turnon();
-
-		if (update_from_sd(argv[2], NULL))
-			goto err_sdfuse;
-
-		ret = 0;
-	}
-	else
-	{
-		printf("Usage:\n%s\n", cmdtp->usage);
-		return 1;
-	}
-
-
-
-err_sdfuse:
-	LCD_setfgcolor(0x000010);
-	LCD_setleftcolor(0x000010);
-	LCD_setprogress(100);
-
-	if (enable_reset)
-		do_reset (NULL, 0, 0, NULL);
-
-	return ret;
-}
-
-U_BOOT_CMD(
-	sdfuse,		4,	1,	do_sdfuse,
-	"sdfuse  - read images from FAT partition of SD card and write them to booting device.\n",
-	"info                             - print primitive infomation.\n"
-	"sdfuse flashall                         - flash boot.img, system.img,\n"
-	"                                          erase userdata, cache, and reboot.\n"
-	"sdfuse flash <partition> [ <filename> ] - write a file to a partition.\n"
-	"sdfuse erase <partition>                - erase (format) a partition.\n"
-);
-#endif	// CONFIG_FASTBOOT_SDFUSE
-
-
 /*
  * Android style flash utilties */
 void fastboot_flash_add_ptn(fastboot_ptentry *ptn)
@@ -1793,17 +1408,6 @@ void fastboot_flash_add_ptn(fastboot_ptentry *ptn)
 void fastboot_flash_dump_ptn(void)
 {
 	unsigned int n;
-
-	printf("[Partition table on "
-#if defined(CFG_FASTBOOT_ONENANDBSP)
-		"OneNAND"
-#elif defined(CFG_FASTBOOT_NANDBSP)
-		"NAND"
-#elif defined(CFG_FASTBOOT_SDMMCBSP)
-		"MoviNAND"
-#endif
-		"]\n");
-
 	for (n = 0; n < pcount; n++)
 	{
 		fastboot_ptentry *ptn = ptable + n;
@@ -1811,21 +1415,8 @@ void fastboot_flash_dump_ptn(void)
 		printf("ptn %d name='%s' start=%d len=%d\n",
 				n, ptn->name, ptn->start, ptn->length);
 #else
-		printf("ptn %d name='%s' ", n, ptn->name);
-		if (n == 0 || ptn->start)
-			printf("start=0x%X ", ptn->start);
-		else
-			printf("start=N/A ");
-		if (ptn->length)
-			printf("len=0x%X(~%dKB) ", ptn->length, ptn->length>>10);
-		else
-			printf("len=N/A ");
-		if (ptn->flags & FASTBOOT_PTENTRY_FLAGS_WRITE_YAFFS)
-			printf("(Yaffs)\n");
-		else if (ptn->flags & FASTBOOT_PTENTRY_FLAGS_USE_MOVI_CMD)
-			printf("(use hard-coded info. (cmd: movi))\n");
-		else
-			printf("\n");
+		printf("ptn %d name='%s' start=0x%08X len=0x%08X(~%dKB)\n",
+				n, ptn->name, ptn->start, ptn->length, ptn->length>>10);
 #endif
 	}
 }

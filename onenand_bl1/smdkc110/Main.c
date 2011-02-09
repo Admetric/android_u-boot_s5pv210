@@ -1,26 +1,16 @@
 /*
- * Copyright (c) 2009 Samsung Electronics Co., Ltd.
- *              http://www.samsung.com/
- *
- * Main: Copy 2 U-Boot from OneNAND to DRAM 
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
+ *	Main: Copy 2 U-Boot from OneNAND to DRAM 
  */
 /* This code support ONLY 4KB OneNAND!!!!! - djpark */
 
 #include <linux/mtd/onenand_regs.h>
 
-#define ONENAND_BASE		0xB0000000
 
-#ifdef S5PV210
+
+#define ONENAND_BASE		0xB0000000
 #define ONENAND_PAGE_SIZE	2048
-#define UBOOT_PHY_BASE		0x23E00000 /* For V210 */
-#else
-#define ONENAND_PAGE_SIZE	4096
-#define UBOOT_PHY_BASE		0x33E00000 /* For C110 */
-#endif
+
+#define UBOOT_PHY_BASE		0x23E00000
 
 #define READ_INTERRUPT()	\
 	onenand_readw(ONENAND_BASE + ONENAND_REG_INTERRUPT)
@@ -98,34 +88,16 @@ void Main(void)
 	volatile unsigned int base = UBOOT_PHY_BASE;
 	int block, page;
 
-	if(ONENAND_PAGE_SIZE == 4096) {
-	#if defined(S5PC110_EVT1)
-		page = 2;
-	#else
-		page = 4;
-	#endif
+	page = 4;
 
-		for (block=0; page < 64; page++) {
-			ONENAND_ReadPage((void *)base, block, page);
-			base += ONENAND_PAGE_SIZE;
-		}
+	for (block=0; page < 64; page++) {
+		ONENAND_ReadPage((void *)base, block, page);
+		base += ONENAND_PAGE_SIZE;
+	}
 
-		for (block=1, page = 0; page < 32; page++) {
-			ONENAND_ReadPage((void *)base, block, page);
-			base += ONENAND_PAGE_SIZE;
-		}
-	} else {
-		page = 4;
-
-		for (block=0; page < 64; page++) {
-			ONENAND_ReadPage((void *)base, block, page);
-			base += ONENAND_PAGE_SIZE;
-		}
-
-		for (block=1, page = 0; page < 64; page++) {
-			ONENAND_ReadPage((void *)base, block, page);
-			base += ONENAND_PAGE_SIZE;
-		}
+	for (block=1, page = 0; page < 64; page++) {
+		ONENAND_ReadPage((void *)base, block, page);
+		base += ONENAND_PAGE_SIZE;
 	}
 
 	run_uboot();

@@ -145,8 +145,6 @@
 #define CONFIG_CMD_DATE
 #define CONFIG_CMD_EXT2
 #define CONFIG_CMD_NET
-#define CONFIG_CMD_FAT
-#define CONFIG_MMC
 
 #include <config_cmd_default.h>
 

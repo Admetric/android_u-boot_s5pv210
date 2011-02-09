@@ -43,14 +43,6 @@
 #define CONFIG_MCP_B		1
 #define CONFIG_EVT1		1		/* EVT1 */
 
-//#define CONFIG_FUSED		1		/* Fused chip */
-//#define CONFIG_SECURE		1		/* secure booting */
-
-#define CONFIG_SW_WORKAROUND	1		/* Software around */
-#if defined(CONFIG_SW_WORKAROUND)
-#define CONFIG_CHECK_MPLL_LOCK	1		/* Check MPLL is locked */
-#endif
-
 #define CONFIG_MTD_ONENAND	/* Use MTD/OneNAND instead of FSR */
 
 #define CONFIG_FASTBOOT		1
@@ -107,7 +99,7 @@
 /*
  * Size of malloc() pool
  */
-#define CFG_MALLOC_LEN		(CFG_ENV_SIZE + 896*1024)
+#define CFG_MALLOC_LEN		(CFG_ENV_SIZE + 1024*1024)
 #define CFG_GBL_DATA_SIZE	128	/* size in bytes reserved for initial data */
 
 #define CFG_STACK_SIZE		512*1024
@@ -184,9 +176,6 @@
 #define CONFIG_CMD_ELF
 #define CONFIG_CMD_DHCP
 //#define CONFIG_CMD_I2C
-
-#define CONFIG_CMD_EXT2
-#define CONFIG_CMD_FAT
 
 /*
  * BOOTP options
@@ -284,16 +273,14 @@
 	defined(CONFIG_CLK_400_100_166_133) || \
 	defined(CONFIG_CLK_200_200_166_133) || \
 	defined(CONFIG_CLK_100_100_166_133)
-#define APLL_MDIV       0x64
-#define APLL_PDIV       0x3
+#define APLL_MDIV       0xc8
+#define APLL_PDIV       0x6
 #define APLL_SDIV       0x1
 #elif defined(CONFIG_CLK_1000_200_166_133)
-#define APLL_MDIV       0x7d
-#define APLL_PDIV       0x3
+#define APLL_MDIV       0xfa
+#define APLL_PDIV       0x6
 #define APLL_SDIV       0x1
 #endif
-
-#define APLL_LOCKTIME_VAL	0x2cf
 
 #if defined(CONFIG_EVT1)
 /* Set AFC value */
@@ -411,9 +398,9 @@
 #define DMC1_MEMCONFIG_0	0x40F01322
 #define DMC1_MEMCONFIG_1	0x50F81312
 #define DMC1_TIMINGA_REF	0x00000618
-#define DMC1_TIMING_ROW		0x182332C8
-#define DMC1_TIMING_DATA	0x13130005
-#define DMC1_TIMING_PWR		0x0E180222
+#define DMC1_TIMING_ROW		0x11344309
+#define DMC1_TIMING_DATA	0x12130005
+#define	DMC1_TIMING_PWR		0x0E190222
 #if defined(CONFIG_CLK_800_100_166_133) || defined(CONFIG_CLK_400_100_166_133) || defined(CONFIG_CLK_100_100_166_133)
 #define DMC0_MEMCONFIG_0	0x30F82222	// MemConfig0	256MB config, 8 banks,Mapping Method[12:15]0:linear, 1:linterleaved, 2:Mixed
 #define DMC0_MEMCONFIG_1	0x40F82222	// MemConfig1
@@ -460,11 +447,10 @@
 #define UART_UDIVSLOT_VAL	0xDDDD
 #endif
 
-#define CONFIG_NR_DRAM_BANKS	2	/* we have 2 bank of DRAM */
-#define PHYS_SDRAM_1		MEMORY_BASE_ADDRESS
-#define PHYS_SDRAM_1_SIZE	0x5000000	/* 80 MB */
-#define PHYS_SDRAM_2		0x40000000
-#define PHYS_SDRAM_2_SIZE	0x10000000	/* 256 MB */
+#define CONFIG_NR_DRAM_BANKS	1	   /* we have 2 bank of DRAM */
+#define PHYS_SDRAM_1		MEMORY_BASE_ADDRESS /* SDRAM Bank #1 */
+
+#define PHYS_SDRAM_1_SIZE	0x10000000 /* 256 MB OneDRAM 128MB + mDDR 128MB */
 
 #define CFG_FLASH_BASE		0x80000000
 
@@ -525,7 +511,6 @@
 #define SDMMC_BLK_SIZE        (0xd003a500)
 
 /* SD/MMC configuration */
-#define CONFIG_MMC
 #define CONFIG_GENERIC_MMC
 #define CONFIG_S3C_HSMMC
 #undef DEBUG_S3C_HSMMC
@@ -542,7 +527,8 @@
 #undef	CONFIG_NO_SDMMC_DETECTION
 
 #define CONFIG_MTDPARTITION	"80000 400000 3000000"
-
+#define CONFIG_BOOTDELAY	3
+#define CONFIG_BOOTCOMMAND	"onenand read 30008000 600000 400000; onenand read 30A00000 B00000 180000; bootm 30008000 30A00000"
 /* OneNAND configuration */
 #define CFG_ONENAND_BASE 	(0xB0000000)
 #define CFG_MAX_ONENAND_DEVICE	1
@@ -561,28 +547,20 @@
 #define CFG_ENV_IS_IN_AUTO
 
 /* Fastboot variables */
-#define CFG_FASTBOOT_TRANSFER_BUFFER		(0x40000000)
-#define CFG_FASTBOOT_TRANSFER_BUFFER_SIZE	(0x8000000)	/* 128MB */
-#define CFG_FASTBOOT_ADDR_KERNEL		(0x30008000)
-#define CFG_FASTBOOT_ADDR_RAMDISK		(0x30A00000)
-#define CFG_FASTBOOT_PAGESIZE			(4096)	// Page size of booting device
-#define CFG_FASTBOOT_SDMMC_BLOCKSIZE		(512)	// Block size of sdmmc
-
-/* Just one BSP type should be defined. */
-#define CFG_FASTBOOT_ONENANDBSP
-//#define CFG_FASTBOOT_NANDBSP
-//#define CFG_FASTBOOT_SDMMCBSP
+#define CFG_FASTBOOT_TRANSFER_BUFFER (0x40000000)
+#define CFG_FASTBOOT_TRANSFER_BUFFER_SIZE (0x8000000)	/* 128MB */
+#define CFG_FASTBOOT_ADDR_KERNEL			(0x30008000)
+#define CFG_FASTBOOT_ADDR_RAMDISK			(0x30A00000)
+//#define CFG_FASTBOOT_PREBOOT_KEYS			1
+//#define CFG_FASTBOOT_PREBOOT_KEY1			0x37 /* 'ok' */
+//#define CFG_FASTBOOT_PREBOOT_KEY2			0x00 /* unused */
+//#define CFG_FASTBOOT_PREBOOT_INITIAL_WAIT	(0)
+//#define CFG_FASTBOOT_PREBOOT_LOOP_MAXIMUM	(1)
+//#define CFG_FASTBOOT_PREBOOT_LOOP_WAIT	(0)
+#define CFG_FASTBOOT_FLASHCMD				do_onenand
 
 /* LCD setting */
-//#define CFG_LCD_TL2796		// for C110 - narrow LCD
-#define CFG_LCD_NONAME1	// for V210 - wide LCD
-#define CFG_LCD_FBUFFER				(0x48000000)
-
-#define CONFIG_BOOTDELAY	3
-#if defined(CFG_FASTBOOT_ONENANDBSP)
-#define CONFIG_BOOTCOMMAND	"onenand read 30008000 600000 400000; onenand read 30A00000 B00000 180000; bootm 30008000 30A00000"
-#elif defined(CFG_FASTBOOT_SDMMCBSP)
-#define CONFIG_BOOTCOMMAND	"movi read kernel 30008000; movi read rootfs 30A00000 180000; bootm 30008000 30A00000"
-#endif
+#define CFG_LCD_TL2796		// for C110 - narrow LCD
+//#define CFG_LCD_NONAME1	// for V210 - wide LCD
 
 #endif	/* __CONFIG_H */

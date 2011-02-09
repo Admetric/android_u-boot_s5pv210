@@ -44,14 +44,21 @@
 #define SROM_BYTE_ENABLE(x)	(1<<((x*4)+2))
 
 /* ------------------------------------------------------------------------- */
-#define DM9000_Tacs	(0x0)	// 0clk		address set-up
-#define DM9000_Tcos	(0x4)	// 4clk		chip selection set-up
-#define DM9000_Tacc	(0xE)	// 14clk	access cycle
-#define DM9000_Tcoh	(0x1)	// 1clk		chip selection hold
-#define DM9000_Tah	(0x4)	// 4clk		address holding time
-#define DM9000_Tacp	(0x6)	// 6clk		page mode access cycle
+#define DM9000_Tacs	(0x2)	// 2clk		address set-up
+#define DM9000_Tcos	(0x2)	// 2clk		chip selection set-up
+#define DM9000_Tacc	(0x6)	// 7clk		access cycle
+#define DM9000_Tcoh	(0x2)	// 2clk		chip selection hold
+#define DM9000_Tach	(0x2)	// 2clk		address holding time
+#define DM9000_Tacp	(0x3)	// 3clk		page mode access cycle
 #define DM9000_PMC	(0x0)	// normal(1data)page mode configuration
 
+#define TL16C752B_Tacs     (0x7)   // 7clk         address set-up
+#define TL16C752B_Tcos     (0x7)   // 7clk         chip selection set-up
+#define TL16C752B_Tacc     (0xf)   // 16clk         access cycle
+#define TL16C752B_Tcoh     (0x7)   // 7clk         chip selection hold
+#define TL16C752B_Tach     (0x7)   // 7clk         address holding time
+#define TL16C752B_Tacp     (0x7)   // 7clk         page mode access cycle
+#define TL16C752B_PMC      (0x0)   // normal(1data)page mode configuration
 
 static inline void delay(unsigned long loops)
 {
@@ -67,20 +74,27 @@ static void dm9000_pre_init(void)
 	unsigned int tmp;
 
 #if defined(DM9000_16BIT_DATA)
-	SROM_BW_REG &= ~(0xf << 20);
-	SROM_BW_REG |= (0<<23) | (0<<22) | (0<<21) | (1<<20);
+	SROM_BW_REG &= ~(0xf << 4);
+	SROM_BW_REG |= (0<<7) | (0<<6) | (1<<5) | (1<<4);
 
 #else	
 	SROM_BW_REG &= ~(0xf << 20);
 	SROM_BW_REG |= (0<<19) | (0<<18) | (0<<16);
 #endif
-	SROM_BC5_REG = ((0<<28)|(1<<24)|(5<<16)|(1<<12)|(4<<8)|(6<<4)|(0<<0));
-
-	tmp = MP01CON_REG;
-	tmp &=~(0xf<<20);
-	tmp |=(2<<20);
-	MP01CON_REG = tmp;
+	SROM_BC1_REG = ((DM9000_Tacs<<28)+(DM9000_Tcos<<24)+(DM9000_Tacc<<16)+(DM9000_Tcoh<<12)+(DM9000_Tach<<8)+(DM9000_Tacp<<4)+(DM9000_PMC));
 }
+
+
+static void tl16c752b_pre_init(void)
+{
+
+        SROM_BW_REG &= ~(0xf << 12);
+        SROM_BW_REG |= (0<<15) | (0<<14) | (1<<13) | (0<<12);
+
+        SROM_BC3_REG = ((TL16C752B_Tacs<<28)+(TL16C752B_Tcos<<24)+(TL16C752B_Tacc<<16)+(TL16C752B_Tcoh<<12)+(TL16C752B_Tach<<8)+(TL16C752B_Tacp<<4)+(TL16C752B_PMC));
+
+}
+
 
 
 int board_init(void)
@@ -93,6 +107,8 @@ int board_init(void)
 #ifdef CONFIG_DRIVER_DM9000
 	dm9000_pre_init();
 #endif
+
+	tl16c752b_pre_init();
 
 	gd->bd->bi_arch_number = MACH_TYPE;
 	gd->bd->bi_boot_params = (PHYS_SDRAM_1+0x100);
@@ -107,10 +123,8 @@ int dram_init(void)
 	gd->bd->bi_dram[0].start = PHYS_SDRAM_1;
 	gd->bd->bi_dram[0].size = PHYS_SDRAM_1_SIZE;
 
-#if defined(PHYS_SDRAM_2)
 	gd->bd->bi_dram[1].start = PHYS_SDRAM_2;
 	gd->bd->bi_dram[1].size = PHYS_SDRAM_2_SIZE;
-#endif
 
 	return 0;
 }

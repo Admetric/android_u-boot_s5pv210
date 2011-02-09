@@ -802,11 +802,9 @@ static int s3c_nand_read_oob_1bit(struct mtd_info *mtd, struct nand_chip *chip,
 	chip->ecc.calculate(mtd, 0, &ecc_calc[chip->ecc.total]);
 	chip->read_buf(mtd, chip->oob_poi + secc_start, eccbytes);
 
-#if 0
 	/* jffs2 special case */
 	if (!(chip->oob_poi[2] == 0x85 && chip->oob_poi[3] == 0x19))
 		chip->ecc.correct(mtd, chip->oob_poi, chip->oob_poi + secc_start, 0);
-#endif
 
 	return sndcmd;
 }
@@ -865,11 +863,9 @@ static int s3c_nand_read_page_1bit(struct mtd_info *mtd, struct nand_chip *chip,
 	chip->ecc.calculate(mtd, p, &ecc_calc[chip->ecc.total]);
 	chip->read_buf(mtd, chip->oob_poi + secc_start, eccbytes);
 
-#if 0
 	/* jffs2 special case */
 	if (!(chip->oob_poi[2] == 0x85 && chip->oob_poi[3] == 0x19))
 		chip->ecc.correct(mtd, chip->oob_poi, chip->oob_poi + secc_start, 0);
-#endif
 
 	col = 0;
 

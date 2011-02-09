@@ -45,14 +45,10 @@
  *
  *************************************************************************
  */
-
-#if defined(CONFIG_EVT1) && !defined(CONFIG_FUSED)
 	.word 0x2000
 	.word 0x0
 	.word 0x0
 	.word 0x0
-#endif
-
 .globl _start
 _start: b	reset
 	ldr	pc, _undefined_instruction
@@ -142,11 +138,10 @@ reset:
 	/*
 	 * set the cpu to SVC32 mode and IRQ & FIQ disable
 	 */
-	@;mrs	r0,cpsr
-	@;bic	r0,r0,#0x1f
-	@;orr	r0,r0,#0xd3
-	@;msr	cpsr,r0
-	msr	cpsr_c, #0xd3		@ I & F disable, Mode: 0x13 - SVC
+	mrs	r0,cpsr
+	bic	r0,r0,#0x1f
+	orr	r0,r0,#0xd3
+	msr	cpsr,r0
 
 
 /*
@@ -164,13 +159,11 @@ reset:
          * not when booting from ram!
          */
 cpu_init_crit:
+	bl	disable_l2cache
 
-#ifndef CONFIG_EVT1
 #if 0	
 	bl	v7_flush_dcache_all
 #else
-	bl	disable_l2cache
-
 	mov	r0, #0x0	@ 
 	mov	r1, #0x0	@ i	
 	mov	r3, #0x0
@@ -190,17 +183,10 @@ lp2:
 	add	r1, #0x1		@ r1(i)++
 	cmp	r1, #8			@ r1(i) < 8
 	bne	lp1			@ jump to lp1
+#endif
 
 	bl	set_l2cache_auxctrl
 	
-	bl	enable_l2cache
-#endif
-#endif
-	
-	bl	disable_l2cache
-
-	bl	set_l2cache_auxctrl_cycle
-
 	bl	enable_l2cache
 	
        /*
@@ -284,15 +270,66 @@ lp2:
 	ldr	sp, =0xd0036000 /* end of sram dedicated to u-boot */
 	sub	sp, sp, #12	/* set stack */
 	mov	fp, #0
-	
-	bl	lowlevel_init	/* go setup pll,mux,memory */
 
-	/* To hold max8698 output before releasing power on switch,
-	 * set PS_HOLD signal to high
-	 */
-	ldr	r0, =0xE010E81C  /* PS_HOLD_CONTROL register */
-	ldr	r1, =0x00005301	 /* PS_HOLD output high	*/
-	str	r1, [r0]
+#if defined(CONFIG_EVT1)
+
+	ldr     r0, =0xe0f00000
+	ldr     r1, [r0]
+	bic     r1, r1, #0x1
+	str     r1, [r0]
+
+	ldr     r0, =0xe1f00000
+	ldr     r1, [r0]
+	bic     r1, r1, #0x1
+	str     r1, [r0]
+
+	ldr     r0, =0xf1800000
+	ldr     r1, [r0]
+	bic     r1, r1, #0x1
+	str     r1, [r0]
+
+	ldr     r0, =0xf1900000
+	ldr     r1, [r0]
+	bic     r1, r1, #0x1
+	str     r1, [r0]
+
+	ldr     r0, =0xf1a00000
+	ldr     r1, [r0]
+	bic     r1, r1, #0x1
+	str     r1, [r0]
+
+	ldr     r0, =0xf1b00000
+	ldr     r1, [r0]
+	bic     r1, r1, #0x1
+	str     r1, [r0]
+
+	ldr     r0, =0xf1c00000
+	ldr     r1, [r0]
+	bic     r1, r1, #0x1
+	str     r1, [r0]
+
+	ldr     r0, =0xf1d00000
+	ldr     r1, [r0]
+	bic     r1, r1, #0x1
+	str     r1, [r0]
+
+	ldr     r0, =0xf1e00000
+	ldr     r1, [r0]
+	bic     r1, r1, #0x1
+	str     r1, [r0]
+
+	ldr     r0, =0xf1f00000
+	ldr     r1, [r0]
+	bic     r1, r1, #0x1
+	str     r1, [r0]
+
+	ldr     r0, =0xfaf00000
+	ldr     r1, [r0]
+	bic     r1, r1, #0x1
+	str     r1, [r0]
+#endif
+
+	bl	lowlevel_init	/* go setup pll,mux,memory */
 
 	/* get ready to call C functions */
 	ldr	sp, _TEXT_PHY_BASE	/* setup temp stack pointer */
@@ -309,16 +346,7 @@ lp2:
 	bic	r2, r2, r0		/* r0 <- current base addr of code */
 	cmp     r1, r2                  /* compare r0, r1                  */
 	beq     after_copy		/* r0 == r1 then skip flash copy   */
-
-#if defined(CONFIG_EVT1)
-	/* If BL1 was copied from SD/MMC CH2 */
-	ldr	r0, =0xD0037488
-	ldr	r1, [r0]
-	ldr	r2, =0xEB200000
-	cmp	r1, r2
-	beq     mmcsd_boot
-#endif
-
+	
 	ldr	r0, =INF_REG_BASE
 	ldr	r1, [r0, #INF_REG3_OFFSET]
 	cmp	r1, #BOOT_NAND		/* 0x0 => boot device is nand */
@@ -338,7 +366,61 @@ nand_boot:
 	b	after_copy
 
 onenand_boot:
+#if 0
+	ldr	r3, =ELFIN_ONENAND_BASE
+	ldr	r4, =0xf6e2
+	str	r4, [r3]
+
+	ldr	r7, =CFG_PHY_UBOOT_BASE
+	mov	r4, #0
+	mov	r3, #0
+
+page_increment:
+	ldr	r2, =0xB3FFFF80
+	add	r2, r2, r4, LSL #13
+	mov	r8, #0x80
+	add	r3, r3, #1
+	add	r2, r2, r3, LSL #7
+
+move_page:
+	ldmia	r2, {r9-r12}
+	stmia	r7!, {r9-r12}
+	subs	r8, r8, #0x1
+	bne	move_page
+
+	ldr	r0, =0xe7100000
+	mov	r1, #0x400
+	str	r1, [r0, #0x50]
+
+	cmp	r3, #127
+	blt	page_increment
+
+	add	r4, r4, #1
+	mov	r3, #0xFFFFFFFF
+	cmp	r4, #1
+	blt	page_increment
+#endif
+	
 	bl	onenand_bl2_copy
+
+	ldr	r0, =ELFIN_CLOCK_POWER_BASE
+	ldr	r1, =0x00001111
+	str	r1, [r0, #CLK_SRC0_OFFSET]
+
+	ldr	r0, =ELFIN_GPIO_BASE
+	ldr	r1, =0x11110000
+	str	r1, [r0, #GPH1CON_OFFSET]
+
+	ldr	r1, =0x5500
+	str	r1, [r0, #GPH1PUD_OFFSET]
+
+	ldr	r1, =0xf0
+	str	r1, [r0, #GPH1DAT_OFFSET]
+
+	ldr     r0, =ELFIN_GPIO_BASE
+	ldr     r1, =0x3000
+	str     r1, [r0, #0x834]
+
 	b	after_copy
 
 mmcsd_boot:
@@ -752,17 +834,6 @@ set_l2cache_auxctrl:
 	mov	r0, #0x0
 	mcr     p15, 1, r0, c9, c0, 2
 	mov     pc, lr
-
-       .align  5
-.global set_l2cache_auxctrl_cycle
-set_l2cache_auxctrl_cycle:
-	mrc 	p15, 1, r0, c9, c0, 2
-	bic 	r0, r0, #(0x1<<29)
-	bic 	r0, r0, #(0x1<<21)
-	bic 	r0, r0, #(0x7<<6)
-	bic 	r0, r0, #(0x7<<0)
-	mcr 	p15, 1, r0, c9, c0, 2
-	mov     pc,lr
 
 	.align 5
 CoInvalidateDCacheIndex:

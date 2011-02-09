@@ -1,14 +1,22 @@
 /*
- * Copyright (c) 2010 Samsung Electronics Co., Ltd.
- *              http://www.samsung.com/
+ * (C) Copyright 2008 - 2009
+ * Windriver, <www.windriver.com>
+ * Tom Rix <Tom.Rix@windriver.com>
  *
- * Platform dependant code for Fastboot
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
  *
- * Base code of USB connection part is usbd-otg-hs.c
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include <common.h>
@@ -2620,7 +2628,7 @@ int fastboot_init(struct cmd_fastboot_interface *interface)
 	fastboot_interface = interface;
 	fastboot_interface->product_name                  = device_strings[DEVICE_STRING_PRODUCT_INDEX];
 	fastboot_interface->serial_no                     = device_strings[DEVICE_STRING_SERIAL_NUMBER_INDEX];
-	fastboot_interface->nand_block_size               = CFG_FASTBOOT_PAGESIZE * 64;
+	fastboot_interface->nand_block_size               = 4096 * 64;
 	fastboot_interface->transfer_buffer               = (unsigned char *) CFG_FASTBOOT_TRANSFER_BUFFER;
 	fastboot_interface->transfer_buffer_size          = CFG_FASTBOOT_TRANSFER_BUFFER_SIZE;
 

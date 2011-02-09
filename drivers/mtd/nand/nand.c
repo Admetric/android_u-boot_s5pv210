@@ -38,7 +38,6 @@ static struct nand_chip nand_chip[CFG_MAX_NAND_DEVICE];
 static ulong base_address[CFG_MAX_NAND_DEVICE] = CFG_NAND_BASE_LIST;
 
 static const char default_nand_name[] = "nand";
-static const __attribute__((unused)) char dev_name[] = "nand0";
 
 extern void board_nand_init(struct nand_chip *nand);
 
@@ -53,15 +52,6 @@ static void nand_init_chip(struct mtd_info *mtd, struct nand_chip *nand,
 	if (nand_scan(mtd, 1) == 0) {
 		if (!mtd->name)
 			mtd->name = (char *)default_nand_name;
-
-#ifdef CONFIG_MTD_DEVICE
-		/*
-		 * Add MTD device so that we can reference it later
-		 * via the mtdcore infrastructure (e.g. ubi).
-		 */
-		mtd->name = dev_name;
-		add_mtd_device(mtd);
-#endif
 	} else
 		mtd->name = NULL;
 

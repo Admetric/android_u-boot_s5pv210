@@ -144,7 +144,7 @@ ifeq ($(ARCH),arm)
 #CROSS_COMPILE = arm-linux-
 #CROSS_COMPILE = /usr/local/arm/4.4.1-eabi-cortex-a8/usr/bin/arm-linux-
 #CROSS_COMPILE = /usr/local/arm/4.2.2-eabi/usr/bin/arm-linux-
-CROSS_COMPILE = /opt/toolchains/arm-2009q3/bin/arm-none-linux-gnueabi-
+CROSS_COMPILE = /usr/local/arm/arm-2009q3/bin/arm-none-linux-gnueabi-
 endif
 ifeq ($(ARCH),i386)
 CROSS_COMPILE = i386-linux-
@@ -228,7 +228,6 @@ LIBS += drivers/mtd/libmtd.a
 LIBS += drivers/mtd/nand/libnand.a
 LIBS += drivers/mtd/nand_legacy/libnand_legacy.a
 LIBS += drivers/mtd/onenand/libonenand.a
-LIBS += drivers/mtd/ubi/libubi.a
 LIBS += drivers/mtd/spi/libspi_flash.a
 LIBS += drivers/net/libnet.a
 LIBS += drivers/net/sk98lin/libsk98lin.a
@@ -2558,22 +2557,14 @@ smdkc110d_config :	unconfig
 smdkc110_mtd_config :	unconfig
 	@$(MKCONFIG) $(@:_config=) arm s5pc11x smdkc110 samsung s5pc110
 	@echo "TEXT_BASE = 0xc3e00000" > $(obj)board/samsung/smdkc110/config.mk
-#	@echo "CONFIG_ONENAND_U_BOOT = y" >> $(obj)include/config.mk
+	@echo "CONFIG_ONENAND_U_BOOT = y" >> $(obj)include/config.mk
 
 smdkc110d_mtd_config :	unconfig
 	@$(MKCONFIG) $(@:_config=) arm s5pc11x smdkc110 samsung s5pc110
 	@echo "TEXT_BASE = 0xc3e00000" > $(obj)board/samsung/smdkc110/config.mk
-#	@echo "CONFIG_ONENAND_U_BOOT = y" >> $(obj)include/config.mk
-
-smdkc110_ubi_config :	unconfig
-	@$(MKCONFIG) $(@:_config=) arm s5pc11x smdkc110 samsung s5pc110
-	@echo "TEXT_BASE = 0xc3e00000" > $(obj)board/samsung/smdkc110/config.mk
+	@echo "CONFIG_ONENAND_U_BOOT = y" >> $(obj)include/config.mk
 
 smdkv210single_config :	unconfig
-	@$(MKCONFIG) $(@:_config=) arm s5pc11x smdkc110 samsung s5pc110
-	@echo "TEXT_BASE = 0xc3e00000" > $(obj)board/samsung/smdkc110/config.mk
-
-smdkv210single_ubi_config :	unconfig
 	@$(MKCONFIG) $(@:_config=) arm s5pc11x smdkc110 samsung s5pc110
 	@echo "TEXT_BASE = 0xc3e00000" > $(obj)board/samsung/smdkc110/config.mk
 
@@ -2584,7 +2575,7 @@ smdkv210vogue_config :	unconfig
 smdkv210onenand_config : unconfig
 	@$(MKCONFIG) $(@:_config=) arm s5pc11x smdkc110 samsung s5pc110
 	@echo "TEXT_BASE = 0xc3e00000" > $(obj)board/samsung/smdkc110/config.mk
-#	@echo "CONFIG_ONENAND_U_BOOT = y" >> $(obj)include/config.mk
+	@echo "CONFIG_ONENAND_U_BOOT = y" >> $(obj)include/config.mk
 
 smdk6440_config :	unconfig
 	@$(MKCONFIG) $(@:_config=) arm s5p64xx smdk6440 samsung s5p6440

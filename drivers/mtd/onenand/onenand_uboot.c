@@ -48,14 +48,7 @@ void onenand_init(void)
 	puts("OneNAND: ");
 	print_size(onenand_mtd.size, "\n");
 
-#ifdef CONFIG_MTD_DEVICE
-	/*
-	 * Add MTD device so that we can reference it later
-	 * via the mtdcore infrastructure (e.g. ubi).
-	 */
 	onenand_mtd.name = dev_name;
-	add_mtd_device(&onenand_mtd);
-#endif
 }
 
 #endif	/* CONFIG_CMD_ONENAND */

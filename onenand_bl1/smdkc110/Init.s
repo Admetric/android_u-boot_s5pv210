@@ -1,13 +1,3 @@
-/*
- * Copyright (c) 2009 Samsung Electronics Co., Ltd.
- *              http://www.samsung.com/
- *
- * Startup code for S5PC110
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- */
 
 .include "s5pc110_reg.inc"
 
@@ -113,144 +103,167 @@ reset:
     */
 cpu_init_crit:
 @---------------------------------------------------------------
-	/*
-	 * Invalidate L1 I/D
-	 */
-	mov	r0, #0                  @ set up for MCR
-	mcr	p15, 0, r0, c8, c7, 0   @ invalidate TLBs
-	mcr	p15, 0, r0, c7, c5, 0   @ invalidate icache
+@Invalidate I, D Cache
+	mov     r0, #0
+	mcr     p15, 0, r0, c7, c5, 0   @; invalidate instruction cache
+	mcr     p15, 0, r0, c7, c6, 2   @; invalidate data cache for Cortex
+@---------------------------------------------------------------
+@Disable Instruction Cache
+	mrc     p15, 0, r0, c1, c0, 0
+	bic     r0, r0, #R1_I
+	mcr     p15, 0, r0, c1, c0, 0
+@---------------------------------------------------------------
+disable_l2cache:
+    mov     r0, #0x00
+	mrc     p15, 0, r0, c1, c0, 1
+	bic     r0, r0, #(1<<1)
+	mcr     p15, 0, r0, c1, c0, 1
+@---------------------------------------------------------------
+.if 1
+	mov	r0, #0x0	@
+	mov	r1, #0x0	@ i
+	mov	r3, #0x0
+	mov	r4, #0x0
+lp1:
+	mov	r2, #0x0	@ j
+lp2:
+	mov	r3, r1, LSL #29		@ r3 = r1(i) <<29
+	mov	r4, r2, LSL #6		@ r4 = r2(j) <<6
+	orr	r4, r4, #0x2		@ r3 = (i<<29)|(j<<6)|(1<<1)
+	orr	r3, r3, r4
+	mov	r0, r3			@ r0 = r3
+CoInvalidateDCacheIndex:
+	;/* r0 = index */
+	mcr     p15, 0, r0, c7, c6, 2
+	add	r2, r2, #0x1		@ r2(j)++
+	cmp	r2, #1024		@ r2 < 1024
+	bne	lp2			@ jump to lp2
+	add	r1, r1, #0x1		@ r1(i)++
+	cmp	r1, #8			@ r1(i) < 8
+	bne	lp1			@ jump to lp1
+.else
+/*
+ *     v7_flush_dcache_all()
+ *
+ *     Flush the whole D-cache.
+ *
+ *     Corrupted registers: r0-r5, r7, r9-r11
+ *
+ *     - mm    - mm_struct describing address space
+ */
+v7_flush_dcache_all:
 
-	/*
-	 * disable MMU stuff and caches
-	 */
-	mrc	p15, 0, r0, c1, c0, 0
-	bic	r0, r0, #0x00002000     @ clear bits 13 (--V-)
-	bic	r0, r0, #0x00000007     @ clear bits 2:0 (-CAM)
-	orr	r0, r0, #0x00000002     @ set bit 1 (--A-) Align
-	orr	r0, r0, #0x00000800     @ set bit 12 (Z---) BTB
-	mcr 	p15, 0, r0, c1, c0, 0
+	ldr	r0, =0xffffffff
+	mrc	p15, 1, r0, c0, c0, 1 		@ Read CLIDR
+	ands	r3, r0, #0x7000000
+	mov	r3, r3, LSR #23       		@ Cache level value (naturally aligned)
+	beq 	Finished
+	mov	r10, #0
+Loop1:
+	add	r2, r10, r10, LSR #1  		@ Work out 3xcachelevel
+	mov	r1, r0, LSR r2        		@ bottom 3 bits are the Ctype for this level
+	and	r1, r1, #7            		@ get those 3 bits alone
+	cmp	r1, #2
+	blt	Skip                   		@ no cache or only instruction cache at this level
+	mcr	p15, 2, r10, c0, c0, 0 		@ write the Cache Size selection register
+	mov	r1, #0
+	mcr	p15, 0, r1, c7, c5, 4 		@ PrefetchFlush to sync the change to the CacheSizeID reg
+	mrc	p15, 1, r1, c0, c0, 0 		@ reads current Cache Size ID register
+	and	r2, r1, #0x7           		@ extract the line length field
+	add	r2, r2, #4            		@ add 4 for the line length offset (log2 16 bytes)
+	ldr	r4, =0x3FF
+	ands	r4, r4, r1, LSR #3   		@ R4 is the max number on the way size (right aligned)
+	clz	r5, r4                		@ R5 is the bit position of the way size increment
+	ldr	r7, =0x00007FFF
+	ands	r7, r7, r1, LSR #13  		@ R7 is the max number of the index size (right aligned)
+Loop2:
+	mov	r9, r4                      	@ R9 working copy of the max way size (right aligned)
+Loop3:
+	orr	r11, r10, r9, LSL r5        	@ factor in the way number and cache number into R11
+	orr	r11, r11, r7, LSL r2        	@ factor in the index number
+	mcr	p15, 0, r11, c7, c6, 2 		@ invalidate by set/way
+	subs	r9, r9, #1                 	@ decrement the way number
+	bge	Loop3
+	subs	r7, r7, #1                 	@ decrement the index
+	bge	Loop2
+Skip:
+	add	r10, r10, #2                	@ increment the cache number
+	cmp	r3, r10
+	bgt	Loop1
+Finished:
+.endif
+@---------------------------------------------------------------
+set_l2cache_auxctrl:
+        mov     r1, #0x00
+        mrc     p15, 1, r1, c9, c0, 2   @; read L2 Cache Auxiliary Control Register
+        bic     r1, r1, #0x0F           @; clear value of Data RAM latency
+        mcr     p15, 1, r1, c9, c0, 2   @;
+
+        ldr     r2, =0x20000001         @; L2 data RAM read multiplexer select : one cycle
+                                        @; Data RAM latency : two cycle
+        orr     r1, r1, r2
+        mcr     p15, 1, r1, c9, c0, 2
+@---------------------------------------------------------------
+enable_l2cache:
+	mrc     p15, 0, r0, c1, c0, 1
+	orr     r0, r0, #0x02           @; enable L2 cache
+	mcr     p15, 0, r0, c1, c0, 1
+@---------------------------------------------------------------
+@Enable Instruction Cache
+        mrc     p15, 0, r0, c1, c0, 0   @; Enable L1 I-Cache
+        orr	r0, r0, #R1_I
+        mcr	p15, 0, r0, c1, c0, 0
+@---------------------------------------------------------------
+.if 0
+       /*
+        * Invalidate L1 I/D
+        */
+        mov	r0, #0                  @ set up for MCR
+        mcr	p15, 0, r0, c8, c7, 0   @ invalidate TLBs
+        mcr	p15, 0, r0, c7, c5, 0   @ invalidate icache
+.endif
+
+       /*
+        * disable MMU stuff and caches
+        */
+        mrc	p15, 0, r0, c1, c0, 0
+        bic	r0, r0, #0x00002000     @ clear bits 13 (--V-)
+        bic	r0, r0, #0x00000007     @ clear bits 2:0 (-CAM)
+        orr	r0, r0, #0x00000002     @ set bit 1 (--A-) Align
+        orr	r0, r0, #0x00000800     @ set bit 12 (Z---) BTB
+        mcr 	p15, 0, r0, c1, c0, 0
 
 	/*
 	 * Go setup Memory and board specific bits prior to relocation.
 	 */
-	ldr	sp, =0xd0036000 /* end of sram dedicated to u-boot */
-	sub	sp, sp, #12 /* set stack */
-	mov	fp, #0
-
 lowlevel_init:
-	push	{lr}
-
-	/* check reset status  */
-	ldr	r0, =(ELFIN_CLOCK_POWER_BASE+RST_STAT_OFFSET)
-	ldr	r1, [r0]
-	bic	r1, r1, #0xfff6ffff
-	cmp	r1, #0x10000
-	beq	wakeup_reset_pre
-	cmp	r1, #0x80000
-	beq	wakeup_reset_from_didle
 
 	/* IO Retention release */
-	ldr	r0, =(ELFIN_CLOCK_POWER_BASE + OTHERS_OFFSET)	/* 0xE0100000 + 0xE000 */
-	ldr	r1, [r0]
-	ldr	r2, =IO_RET_REL
-	orr	r1, r1, r2
-	str	r1, [r0]
+@	ldr	r0, =(ELFIN_CLOCK_POWER_BASE + OTHERS_OFFSET)	/* 0xE0100000 + 0xE000 */
+@	ldr	r1, [r0]
+@	ldr	r2, =IO_RET_REL
+@	orr	r1, r1, r2
+@	str	r1, [r0]
 
 	/* Disable Watchdog */
 	ldr	r0, =ELFIN_WATCHDOG_BASE	/* 0xE2700000 */
 	mov	r1, #0
 	str	r1, [r0]
 
-	/* SRAM(2MB) init for SMDKC110 */
 	/* GPJ1 SROM_ADDR_16to21 */
 	ldr	r0, =ELFIN_GPIO_BASE
-	
-	ldr	r1, [r0, #GPJ1CON_OFFSET]
-	bic	r1, r1, #0xFFFFFF
-	ldr	r2, =0x444444
-	orr	r1, r1, r2
+	ldr	r1, =0x00444444
 	str	r1, [r0, #GPJ1CON_OFFSET]
 
-	ldr	r1, [r0, #GPJ1PUD_OFFSET]
-	ldr	r2, =0x3ff
-	bic	r1, r1, r2
-	str	r1, [r0, #GPJ1PUD_OFFSET]
-
 	/* GPJ4 SROM_ADDR_16to21 */
-	ldr	r1, [r0, #GPJ4CON_OFFSET]
-	bic	r1, r1, #(0xf<<16)
-	ldr	r2, =(0x4<<16)
-	orr	r1, r1, r2
+	ldr	r0, =ELFIN_GPIO_BASE
+	ldr	r1, =0x00444444
 	str	r1, [r0, #GPJ4CON_OFFSET]
-
-	ldr	r1, [r0, #GPJ4PUD_OFFSET]
-	ldr	r2, =(0x3<<8)
-	bic	r1, r1, r2
-	str	r1, [r0, #GPJ4PUD_OFFSET]
-
 
 	/* CS0 - 16bit sram, enable nBE, Byte base address */
 	ldr	r0, =ELFIN_SROM_BASE	/* 0xE8000000 */
-	mov	r1, #0x1
+	mov	r1, #0xB
 	str	r1, [r0]
-
-	/* PS_HOLD pin(GPH0_0) set to high */
-	ldr	r0, =(ELFIN_CLOCK_POWER_BASE + PS_HOLD_CONTROL_OFFSET)
-	ldr	r1, [r0]
-	orr	r1, r1, #0x300	
-	orr	r1, r1, #0x1	
-	str	r1, [r0]
-
-	/* init system clock */
-	bl	system_clock_init
-
-	bl	mem_ctrl_asm_init
-
-1:
-	/* for UART */
-	bl	uart_asm_init
-
-	bl	tzpc_init
-
-	bl	onenandcon_init
-
-	pop	{pc}
-
-wakeup_reset_from_didle:
-	/* Wait when APLL is locked */
-	ldr	r0, =ELFIN_CLOCK_POWER_BASE
-lockloop:
-	ldr	r1, [r0, #APLL_CON0_OFFSET]
-	and	r1, r1, #(1<<29)
-	cmp	r1, #(1<<29)
-	bne	lockloop
-	beq	exit_wakeup
-
-wakeup_reset_pre:
-	mrc	p15, 0, r1, c1, c0, 1	@Read CP15 Auxiliary control register
-	and	r1, r1, #0x80000000	@Check L2RD is disable or not
-	cmp	r1, #0x80000000		
-	bne	wakeup_reset		@if L2RD is not disable jump to wakeup_reset 
-	
-	bl	disable_l2cache
-	bl	v7_flush_dcache_all
-	bl	enable_l2cache
-
-wakeup_reset:
-	/* init system clock */
-	bl	system_clock_init
-	bl	mem_ctrl_asm_init
-	bl	tzpc_init
-	bl 	onenandcon_init
-
-exit_wakeup:
-	/*Load return address and jump to kernel*/
-	ldr	r0, =(INF_REG_BASE+INF_REG0_OFFSET)
-	ldr	r1, [r0]	/* r1 = physical address of s5pc110_cpu_resume function*/
-
-	mov	pc, r1		/*Jump to kernel */
-	nop
-	nop
 
 /*
  * system_clock_init: Initialize core clock and bus clock.
@@ -366,8 +379,6 @@ system_clock_init:
 	orr	r1, r1, r2
 	str	r1, [r0, #CLK_OUT_OFFSET]
 
-	mov	pc, lr
-
 /*
  * uart_asm_init: Initialize UART in asm mode, 115200bps fixed.
  * void uart_asm_init(void)
@@ -403,8 +414,6 @@ uart_asm_init:
 	ldr	r1, =0x4C4C4C4C
 	str	r1, [r0, #UTXH_OFFSET]		@'L'
 
-	mov	pc, lr
-
 /*
  * Setting TZPC[TrustZone Protection Controller]
  */
@@ -434,8 +443,6 @@ tzpc_init:
 	str	r1, [r0, #TZPC_DECPROT0SET_OFFSET]
 	str	r1, [r0, #TZPC_DECPROT1SET_OFFSET]
 	str	r1, [r0, #TZPC_DECPROT2SET_OFFSET]
-
-	mov	pc, lr
 
 mem_ctrl_asm_init:
 
@@ -999,9 +1006,7 @@ wait2:	/* To be impleneted*/
 	str	r1, [r0, #DMC_MEMCONTROL]
 .endif
 
-	mov	pc, lr
-
-onenandcon_init:
+initialize_onenandcon:
 	@; GPIO setting for OneNAND
 	ldr	r0, =ELFIN_GPIO_BASE	@0xE0200000
 	ldr	r1, [r0, #MP01CON_OFFSET]
@@ -1043,91 +1048,28 @@ wait_orwb:
 	ldr	r1, =ONENAND_IF_CTRL_REG_VAL
 	str	r1, [r0, #ONENAND_IF_CTRL_OFFSET]
 
-	mov	pc, lr
+wakeup_reset:
 
-/*
- *     v7_flush_dcache_all()
- *
- *     Flush the whole D-cache.
- *
- *     Corrupted registers: r0-r5, r7, r9-r11
- *
- *     - mm    - mm_struct describing address space
- */
-v7_flush_dcache_all:
-	ldr	r0, =0xffffffff
-	mrc	p15, 1, r0, c0, c0, 1 		@ Read CLIDR
-	ands	r3, r0, #0x7000000
-	mov	r3, r3, LSR #23       		@ Cache level value (naturally aligned)
-	beq	Finished
-	mov	r10, #0
-Loop1:         
-	add	r2, r10, r10, LSR #1  		@ Work out 3xcachelevel
-	mov	r1, r0, LSR r2        		@ bottom 3 bits are the Ctype for this level
-	and	r1, r1, #7            		@ get those 3 bits alone
-	cmp	r1, #2
-	blt	Skip                   		@ no cache or only instruction cache at this level
-	mcr	p15, 2, r10, c0, c0, 0 		@ write the Cache Size selection register
-	mov	r1, #0
-	mcr	p15, 0, r1, c7, c5, 4 		@ PrefetchFlush to sync the change to the CacheSizeID reg
-	mrc	p15, 1, r1, c0, c0, 0 		@ reads current Cache Size ID register
-	and	r2, r1, #0x7           		@ extract the line length field
-	add	r2, r2, #4            		@ add 4 for the line length offset (log2 16 bytes)
-	ldr	r4, =0x3FF
-	ands	r4, r4, r1, LSR #3   		@ R4 is the max number on the way size (right aligned)
-	clz	r5, r4                		@ R5 is the bit position of the way size increment
-	ldr	r7, =0x00007FFF
-	ands	r7, r7, r1, LSR #13  		@ R7 is the max number of the index size (right aligned)
-Loop2:         
-	mov	r9, r4                      	@ R9 working copy of the max way size (right aligned)
-Loop3:         
-	orr	r11, r10, r9, LSL r5        	@ factor in the way number and cache number into R11
-	orr	r11, r11, r7, LSL r2        	@ factor in the index number
-	mcr	p15, 0, r11, c7, c6, 2 		@ invalidate by set/way
-	subs	r9, r9, #1                 	@ decrement the way number
-	bge	Loop3
-	subs	r7, r7, #1                 	@ decrement the index
-	bge	Loop2
-Skip:          
-	add	r10, r10, #2                	@ increment the cache number
-	cmp	r3, r10
-	bgt	Loop1
-Finished:
-	mov	pc, lr
-	
-disable_l2cache:
-	mrc	p15, 0, r0, c1, c0, 1
-	bic	r0, r0, #(1<<1)
-	mcr	p15, 0, r0, c1, c0, 1
-	mov	pc, lr
+	ldr     r0, =0xE010A000
+	ldr     r1, [r0]
+	bic     r1, r1, #0xFFFEFFFF
+	cmp     r1, #0x10000
 
-enable_l2cache:
-	mrc	p15, 0, r0, c1, c0, 1
-	orr	r0, r0, #(1<<1)
-	mcr	p15, 0, r0, c1, c0, 1
+	bne	exit_check
+
+    /*Load return address and jump to kernel*/
+
+	ldr	r0, =0xE010F000
+	ldr	r1, [r0]    /* r1 = physical address of s5pc110_cpu_resume function*/
+
+	mov	pc, r1      /*Jump to kernel*/
+
+	nop
+	nop
+
+exit_check:
+
 	mov	pc, lr
-
-.if 0
-set_l2cache_auxctrl:
-	mov	r0, #0x0
-	mcr	p15, 1, r0, c9, c0, 2
-	mov	pc, lr
-
-set_l2cache_auxctrl_cycle:
-	mrc p15, 1, r0, c9, c0, 2
-	mov r1, #(0x1<<29)
-	mov r2, #(0x1)
-	bic r0, r0, #0x7
-	orr r0, r0, r1
-	orr r0, r0, r2
-	mcr p15, 1, r0, c9, c0, 2
-	mov     pc,lr
-
-CoInvalidateDCacheIndex:
-	;/* r0 = index */
-	mcr	p15, 0, r0, c7, c6, 2
-	mov	pc,lr
-.endif
 
 @;The LR register wont be valid if the current mode is not SVC mode.
 HandlerFIQ:

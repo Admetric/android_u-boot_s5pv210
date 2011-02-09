@@ -41,9 +41,6 @@
 #define CONFIG_MCP_D		1		/* OneDRAM + mDDR */
 #define CONFIG_EVT1		1		/* EVT1 */
 
-//#define CONFIG_FUSED		1		/* Fused chip */
-//#define CONFIG_SECURE		1		/* secure booting */
-
 #define BOOT_ONENAND		0x1
 #define BOOT_NAND		0x2
 #define BOOT_MMCSD		0x3
@@ -329,7 +326,6 @@
 #define EPLL_VAL	set_pll(EPLL_MDIV,EPLL_PDIV,EPLL_SDIV)
 #define VPLL_VAL	set_pll(VPLL_MDIV,VPLL_PDIV,VPLL_SDIV)
 
-/* Set CLK_DIV0 */
 #if defined(CONFIG_CLK_667_166_166_133)
 #define CLK_DIV0_VAL    ((0<<APLL_RATIO)|(3<<A2M_RATIO)|(3<<HCLK_MSYS_RATIO)|(1<<PCLK_MSYS_RATIO)\
 			|(3<<HCLK_DSYS_RATIO)|(1<<PCLK_DSYS_RATIO)|(4<<HCLK_PSYS_RATIO)|(1<<PCLK_PSYS_RATIO))
@@ -358,27 +354,16 @@
 #define CLK_DIV0_VAL    ((0<<APLL_RATIO)|(4<<A2M_RATIO)|(4<<HCLK_MSYS_RATIO)|(1<<PCLK_MSYS_RATIO)\
 			|(3<<HCLK_DSYS_RATIO)|(1<<PCLK_DSYS_RATIO)|(4<<HCLK_PSYS_RATIO)|(1<<PCLK_PSYS_RATIO))
 #endif
-/* End CLK_DIV0 */
 
 #define CLK_DIV1_VAL	((1<<16)|(1<<12)|(1<<8)|(1<<4))
-
-/* Set G3D/MFC divider */
-#if defined(CONFIG_CLK_1000_200_166_133)
-#define CLK_DIV2_VAL	(4<<0) | (4<<4)
-#elif defined(CONFIG_CLK_800_200_166_133)
-#define CLK_DIV2_VAL	(3<<0) | (3<<4)
-#else
 #define CLK_DIV2_VAL	(1<<0)
-#endif
-/* End G3D/MFC divider */
 
-/* Set DRAM timing parameter */
 #if defined(CONFIG_CLK_533_133_100_100)
 
 #if defined(CONFIG_MCP_D)
 
 #define DMC0_TIMINGA_REF	0x40e
-#define DMC0_TIMING_ROW		0x14233206
+#define DMC0_TIMING_ROW		0x10233206
 #define DMC0_TIMING_DATA	0x12130005
 #define	DMC0_TIMING_PWR		0x0E100222
 
@@ -414,7 +399,7 @@
 #define DMC1_MEMCONFIG_0	0x40F01322
 #define DMC1_MEMCONFIG_1	0x50F81312
 #define DMC1_TIMINGA_REF	0x00000618
-#define DMC1_TIMING_ROW		0x18344309
+#define DMC1_TIMING_ROW		0x11344309
 #define DMC1_TIMING_DATA	0x12130005
 #define	DMC1_TIMING_PWR		0x0E190222
 #if defined(CONFIG_CLK_800_100_166_133) || defined(CONFIG_CLK_400_100_166_133) || defined(CONFIG_CLK_100_100_166_133)
@@ -452,9 +437,8 @@
 #define	DMC1_TIMING_PWR		0x0E190222
 
 #endif
-/* End DRAM timing parameter */
 
-/* Set UART baudrate */
+
 #if defined(CONFIG_CLK_533_133_100_100)
 #define UART_UBRDIV_VAL		26
 #define UART_UDIVSLOT_VAL	0x0808
@@ -462,7 +446,6 @@
 #define UART_UBRDIV_VAL		34
 #define UART_UDIVSLOT_VAL	0xDDDD
 #endif
-/* End UART baudrate */
 
 #define CONFIG_NR_DRAM_BANKS	1	   /* we have 2 bank of DRAM */
 #define PHYS_SDRAM_1		MEMORY_BASE_ADDRESS /* SDRAM Bank #1 */

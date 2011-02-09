@@ -106,29 +106,6 @@ s3c_hsmmc_send_command(struct mmc *mmc, struct mmc_cmd *cmd,
 	u32 mask;
 	unsigned long timeout;
 
-	/* Clear Error Interrupt Status Register before issuing cmd */
-	writew(readw(host->ioaddr + SDHCI_ERRINT_STATUS),
-	host->ioaddr + SDHCI_ERRINT_STATUS);
-
-	/* Clear Normal Interrupt Status Register before issuing cmd */
-	writew(readw(host->ioaddr + SDHCI_INT_STATUS),
-	host->ioaddr + SDHCI_INT_STATUS);
-
-	/* Wait max 10 ms */
-	timeout = 10;
-
-	/* Check the status busy bit until it is low*/
-	while ((readw(host->ioaddr + S3C64XX_SDHCI_CONTROL4)
-		& S3C64XX_SDHCI_CONTROL4_BUSY)) {
-		if(timeout == 0) {
-			printk("sdhci: Status busy bit is \
-				LOW for 10ms(warning)\n");
-			break;
-		}
-		timeout--;
-		mdelay(1);
-	}
-
 	/* Wait max 10 ms */
 	timeout = 10;
 

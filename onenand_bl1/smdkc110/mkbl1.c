@@ -1,18 +1,9 @@
 /*
- * Copyright (c) 2009 Samsung Electronics Co., Ltd.
- *              http://www.samsung.com/
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- */
-/*
  *	1. Compute checksum for S5PC110 iROM  code
  *	2. Pad 0xFFFFFFFF
  *
  *	djpark (2009.08.10)
  */
-
 #include <stdio.h>
 
 //#define DEBUG_MSG

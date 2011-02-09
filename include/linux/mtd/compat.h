@@ -23,12 +23,6 @@
 #define kfree(ptr)		free(ptr)
 #define vfree(ptr)		free(ptr)
 
-#define DECLARE_WAITQUEUE(...)	do { } while (0)
-#define add_wait_queue(...)	do { } while (0)
-#define remove_wait_queue(...)	do { } while (0)
-
-#define KERNEL_VERSION(a,b,c)	(((a) << 16) + ((b) << 8) + (c))
-
 /*
  * ..and if you can't take the strict
  * types, you can specify one yourself.
@@ -48,8 +42,8 @@
 #define BUG_ON(condition) do { if (condition) BUG(); } while(0)
 #endif /* BUG */
 
-#define likely(x)      __builtin_expect(!!(x), 1)
-#define unlikely(x)    __builtin_expect(!!(x), 0)
+#define likely(x)	__builtin_expect(!!(x), 1)
+#define unlikely(x)	__builtin_expect(!!(x), 0)
 
 #define PAGE_SIZE	4096
 

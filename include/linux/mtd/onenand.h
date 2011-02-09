@@ -178,8 +178,6 @@ struct onenand_chip {
 #define ONENAND_IS_SINGLE_DATARAM(this)				\
 	(this->options & ONENAND_PAGE_EQUALS_DATARAM)
 
-#define ONENAND_NO_OOB_CMD			ONENAND_IS_SINGLE_DATARAM
-
 #define OTP_LOCK_IN_MAIN(this)						\
 	(this->options & ONENAND_OTP_LOCK_OFFSET_IN_MAIN)
 

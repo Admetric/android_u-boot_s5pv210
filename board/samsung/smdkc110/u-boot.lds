@@ -39,9 +39,6 @@ SECTIONS
           cpu/s5pc11x/nand_cp.o (.text)                     
           cpu/s5pc11x/movi.o (.text) 
           board/samsung/smdkc110/flash.o (.text) 
-          common/secure.o (.text) 
-	  common/ace_sha1.o (.text)
-	  cpu/s5pc11x/pmic.o (.text)
 	  *(.text)
 	}
 

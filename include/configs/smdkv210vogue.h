@@ -43,9 +43,6 @@
 #define CONFIG_VOGUES		1
 #define CONFIG_EVT1		1		/* EVT1 */
 
-//#define CONFIG_FUSED		1		/* Fused chip */
-//#define CONFIG_SECURE		1		/* secure booting */
-
 #define BOOT_ONENAND		0x1
 #define BOOT_NAND		0x2
 #define BOOT_MMCSD		0x3

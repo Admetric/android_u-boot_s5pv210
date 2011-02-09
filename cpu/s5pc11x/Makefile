@@ -30,7 +30,7 @@ START	= start.o
 OBJS	= nand_cp.o serial.o  usb_ohci.o \
 		interrupts.o cpu.o nand.o onenand.o onenand_cp.o \
 		usbd-otg-hs.o movi.o setup_hsmmc.o setup_ide.o \
-		fastboot.o fimd.o pmic.o
+		fastboot.o fimd.o
 
 all:	.depend $(START) $(LIB)
 

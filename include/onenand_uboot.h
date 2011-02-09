@@ -21,8 +21,8 @@ struct kvec {
 	size_t iov_len;
 };
 
-//typedef int spinlock_t;
-//typedef int wait_queue_head_t;
+typedef int spinlock_t;
+typedef int wait_queue_head_t;
 
 struct mtd_info;
 struct erase_info;

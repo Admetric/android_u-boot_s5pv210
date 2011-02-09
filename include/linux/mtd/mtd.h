@@ -10,11 +10,8 @@
 #define __MTD_MTD_H__
 
 #include <linux/types.h>
-#include <div64.h>
 #include <linux/mtd/mtd-abi.h>
 
-#define MTD_CHAR_MAJOR 90
-#define MTD_BLOCK_MAJOR 31
 #define MAX_MTD_DEVICES 32
 
 #define MTD_ERASE_PENDING      	0x01
@@ -24,24 +21,6 @@
 #define MTD_ERASE_FAILED        0x10
 
 #define MTD_FAIL_ADDR_UNKNOWN	-1LL
-
-#if 0
-/*
- * Enumeration for NAND/OneNAND flash chip state
- */
-enum {
-	FL_READY,
-	FL_READING,
-	FL_WRITING,
-	FL_ERASING,
-	FL_SYNCING,
-	FL_CACHEDPRG,
-	FL_RESETING,
-	FL_UNLOCKING,
-	FL_LOCKING,
-	FL_PM_SUSPENDED,
-};
-#endif
 
 /* If the erase fails, fail_addr might indicate exactly which block failed.  If
    fail_addr = 0xffffffff, the failure was not at the device level or was not
@@ -112,7 +91,7 @@ struct mtd_oob_ops {
 struct mtd_info {
 	u_char type;
 	u_int32_t flags;
-	u_int32_t size;	 /* Total size of the MTD */
+	u_int32_t size;	 // Total size of the MTD
 
 	/* "Major" erase size for the device. Naïve users may take this
 	 * to be the only erase size available, or may use the more detailed
@@ -128,8 +107,8 @@ struct mtd_info {
 	 */
 	u_int32_t writesize;
 
-	u_int32_t oobsize;   /* Amount of OOB data per block (e.g. 16) */
-	u_int32_t oobavail;  /* Available OOB bytes per block */
+	u_int32_t oobsize;   // Amount of OOB data per block (e.g. 16)
+	u_int32_t oobavail;  // Available OOB bytes per block
 
 	u_int32_t ecctype;
 	u_int32_t eccsize;
@@ -237,16 +216,6 @@ struct mtd_info {
 	void (*put_device) (struct mtd_info *mtd);
 };
 
-static inline uint32_t mtd_div_by_eb(uint64_t sz, struct mtd_info *mtd)
-{
-	do_div(sz, mtd->erasesize);
-	return sz;
-}
-
-static inline uint32_t mtd_mod_by_eb(uint64_t sz, struct mtd_info *mtd)
-{
-	return do_div(sz, mtd->erasesize);
-}
 
 	/* Kernel-side ioctl definitions */
 

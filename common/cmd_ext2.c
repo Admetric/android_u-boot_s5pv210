@@ -1,8 +1,4 @@
 /*
- * (C) Copyright 2010
- * Samsung Electronics Co. Ltd
- * added ext2/ext3 format
- *
  * (C) Copyright 2004
  * esd gmbh <www.esd-electronics.com>
  * Reinhard Arlt <reinhard.arlt@esd-electronics.com>
@@ -260,64 +256,4 @@ U_BOOT_CMD(
 	"<interface> <dev[:part]> [addr] [filename] [bytes]\n"
 	"    - load binary file 'filename' from 'dev' on 'interface'\n"
 	"      to address 'addr' from ext2 filesystem\n"
-);
-
-int ext_format (int argc, char *argv[], char set_journaling)
-{
-	int dev=0;
-	int part=1;
-	char *ep;
-	block_dev_desc_t *dev_desc=NULL;
-
-	if (argc < 2) {
-		printf ("usage: ext2formt <interface> <dev[:part]>\n");
-		return (0);
-	}
-	dev = (int)simple_strtoul (argv[2], &ep, 16);
-	dev_desc=get_dev(argv[1],dev);
-	if (dev_desc==NULL) {
-		puts ("\n** Invalid boot device **\n");
-		return 1;
-	}
-	if (*ep) {
-		if (*ep != ':') {
-			puts ("\n** Invalid boot device, use `dev[:part]' **\n");
-			return 1;
-		}
-		part = (int)simple_strtoul(++ep, NULL, 16);
-		if (part > 4 || part < 1) {
-			puts ("** Partition Number shuld be 1 ~ 4 **\n");
-			return 1;
-		}
-	}
-	printf("Start format MMC%d partition%d ....\n", dev, part);
-	if (ext2fs_format(dev_desc, part, set_journaling) != 0) {
-		printf("Format failure!!!\n");
-	}
-
-	return 0;
-}
-
-int do_ext2_format (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
-{
-	ext_format(argc, argv, 0);
-}
-
-U_BOOT_CMD(
-	ext2format,	3,	0,	do_ext2_format,
-	"ext2format - disk format by ext2\n",
-	"<interface(only support mmc)> <dev:partition num>\n"
-	"    - format by ext2 on 'interface'\n"
-);
-
-int do_ext3_format (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
-{
-	ext_format(argc, argv, 1);
-}
-
-U_BOOT_CMD(
-	ext3format,	3,	0,	do_ext3_format,
-	"ext3format - disk format by ext3\n",
-	"<interface(only support mmc)> <dev:partition num>\n"
-	"    - format by ext3 on 'interface'\n"
 );

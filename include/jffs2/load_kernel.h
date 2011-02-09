@@ -30,10 +30,7 @@
 /* mtd device types */
 #define MTD_DEV_TYPE_NOR      0x0001
 #define MTD_DEV_TYPE_NAND     0x0002
-#define MTD_DEV_TYPE_ONENAND	0x0004
-
-#define MTD_DEV_TYPE(type) ((type == MTD_DEV_TYPE_NAND) ? "nand" :	\
-			(type == MTD_DEV_TYPE_ONENAND) ? "onenand" : "nor")
+#define MTD_DEV_TYPE(type) ((type == MTD_DEV_TYPE_NAND) ? "nand" : "nor")
 
 struct mtd_device {
 	struct list_head link;
@@ -50,7 +47,6 @@ struct part_info {
 	u32 offset;			/* offset within device */
 	void *jffs2_priv;		/* used internaly by jffs2 */
 	u32 mask_flags;			/* kernel MTD mask flags */
-	u32 sector_size;		/* size of sector */
 	struct mtd_device *dev;		/* parent device */
 };
 

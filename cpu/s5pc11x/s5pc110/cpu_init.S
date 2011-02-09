@@ -4,19 +4,14 @@
 	.globl mem_ctrl_asm_init
 mem_ctrl_asm_init:
 
-#ifndef CONFIG_EVT1
-
-	ldr     r0, =ASYNC_MSYS_DMC0_BASE
+	ldr	r0, =ASYNC_MSYS_DMC0_BASE
 
 	ldr     r1, =0x0
 	str     r1, [r0, #0x0]
-
-	/* This register is removed at EVT1 of C110. */
-	ldr     r1, =0x0
-	str     r1, [r0, #0xC]
-
-#endif
-
+	
+	ldr	r1, =0x0
+	str	r1, [r0, #0xC]
+	
 #ifdef CONFIG_MCP_SINGLE
 
 	/* DMC0 Drive Strength (Setting 2X) */
@@ -116,10 +111,10 @@ find_lock_val:
 	str	r1, [r0, #DMC_PHYCONTROL0]
 #endif
 	/* setting DDR2 */
-	ldr	r1, =0x0FFF2010				@ConControl auto refresh off
+	ldr	r1, =0x0FFF1010				@ConControl auto refresh off
 	str	r1, [r0, #DMC_CONCONTROL]
 
-	ldr	r1, =0x00212400				@MemControl BL=4, 2 chip, DDR2 type, dynamic self refresh, force precharge, dynamic power down off
+	ldr	r1, =0x00202400				@MemControl BL=4, 2 chip, DDR2 type, dynamic self refresh, force precharge, dynamic power down off
 	str	r1, [r0, #DMC_MEMCONTROL]
 	
 	ldr	r1, =DMC0_MEMCONFIG_0			@MemConfig0 256MB config, 8 banks,Mapping Method[12:15]0:linear, 1:linterleaved, 2:Mixed
@@ -155,10 +150,10 @@ find_lock_val:
 	ldr	r1, =0x00030000				@DirectCmd	chip0 EMRS3
 	str	r1, [r0, #DMC_DIRECTCMD]
 
-	ldr	r1, =0x00010400				@DirectCmd	chip0 EMRS1 (MEM DLL on, DQS# disable)
+	ldr	r1, =0x00010001				@DirectCmd	chip0 EMRS1 (MEM DLL on, DQS# disable)
 	str	r1, [r0, #DMC_DIRECTCMD]
 
-	ldr	r1, =0x00000542				@DirectCmd	chip0 MRS (MEM DLL reset) CL=4, BL=4
+	ldr	r1, =0x00000532				@DirectCmd	chip0 MRS (MEM DLL reset) CL=3, BL=4
 	str	r1, [r0, #DMC_DIRECTCMD]
 
 	ldr	r1, =0x01000000				@DirectCmd	chip0 PALL
@@ -170,52 +165,52 @@ find_lock_val:
 	ldr	r1, =0x05000000				@DirectCmd	chip0 REFA
 	str	r1, [r0, #DMC_DIRECTCMD]
 
-	ldr	r1, =0x00000442				@DirectCmd	chip0 MRS (MEM DLL unreset)
+	ldr	r1, =0x00000432				@DirectCmd	chip0 MRS (MEM DLL unreset)
 	str	r1, [r0, #DMC_DIRECTCMD]
 
-	ldr	r1, =0x00010780				@DirectCmd	chip0 EMRS1 (OCD default)
+	ldr	r1, =0x00010381				@DirectCmd	chip0 EMRS1 (OCD default)
 	str	r1, [r0, #DMC_DIRECTCMD]
 
-	ldr	r1, =0x00010400				@DirectCmd	chip0 EMRS1 (OCD exit)
+	ldr	r1, =0x00010001				@DirectCmd	chip0 EMRS1 (OCD exit)
 	str	r1, [r0, #DMC_DIRECTCMD]
 	
-	ldr	r1, =0x07100000				@DirectCmd	chip1 Deselect
-	str	r1, [r0, #DMC_DIRECTCMD]
+;	ldr	r1, =0x07100000				@DirectCmd	chip1 Deselect
+;	str	r1, [r0, #DMC_DIRECTCMD]
 
-	ldr	r1, =0x01100000				@DirectCmd	chip1 PALL
-	str	r1, [r0, #DMC_DIRECTCMD]
+;	ldr	r1, =0x01100000				@DirectCmd	chip1 PALL
+;	str	r1, [r0, #DMC_DIRECTCMD]
 	
-	ldr	r1, =0x00120000				@DirectCmd	chip1 EMRS2
-	str	r1, [r0, #DMC_DIRECTCMD]
+;	ldr	r1, =0x00120000				@DirectCmd	chip1 EMRS2
+;	str	r1, [r0, #DMC_DIRECTCMD]
 	
-	ldr	r1, =0x00130000				@DirectCmd	chip1 EMRS3
-	str	r1, [r0, #DMC_DIRECTCMD]
+;	ldr	r1, =0x00130000				@DirectCmd	chip1 EMRS3
+;	str	r1, [r0, #DMC_DIRECTCMD]
 	
-	ldr	r1, =0x00110400				@DirectCmd	chip1 EMRS1 (MEM DLL on, DQS# disable)
-	str	r1, [r0, #DMC_DIRECTCMD]
+;	ldr	r1, =0x00110400				@DirectCmd	chip1 EMRS1 (MEM DLL on, DQS# disable)
+;	str	r1, [r0, #DMC_DIRECTCMD]
 	
-	ldr	r1, =0x00100542				@DirectCmd	chip1 MRS (MEM DLL reset) CL=4, BL=4
-	str	r1, [r0, #DMC_DIRECTCMD]
+;	ldr	r1, =0x00100542				@DirectCmd	chip1 MRS (MEM DLL reset) CL=4, BL=4
+;	str	r1, [r0, #DMC_DIRECTCMD]
 	
-	ldr	r1, =0x01100000				@DirectCmd	chip1 PALL
-	str	r1, [r0, #DMC_DIRECTCMD]
+;	ldr	r1, =0x01100000				@DirectCmd	chip1 PALL
+;	str	r1, [r0, #DMC_DIRECTCMD]
 	
-	ldr	r1, =0x05100000				@DirectCmd	chip1 REFA
-	str	r1, [r0, #DMC_DIRECTCMD]
+;	ldr	r1, =0x05100000				@DirectCmd	chip1 REFA
+;	str	r1, [r0, #DMC_DIRECTCMD]
 	
-	ldr	r1, =0x05100000				@DirectCmd	chip1 REFA
-	str	r1, [r0, #DMC_DIRECTCMD]
+;	ldr	r1, =0x05100000				@DirectCmd	chip1 REFA
+;	str	r1, [r0, #DMC_DIRECTCMD]
 	
-	ldr	r1, =0x00100442				@DirectCmd	chip1 MRS (MEM DLL unreset)
-	str	r1, [r0, #DMC_DIRECTCMD]
+;	ldr	r1, =0x00100442				@DirectCmd	chip1 MRS (MEM DLL unreset)
+;	str	r1, [r0, #DMC_DIRECTCMD]
 	
-	ldr	r1, =0x00110780				@DirectCmd	chip1 EMRS1 (OCD default)
-	str	r1, [r0, #DMC_DIRECTCMD]
+;	ldr	r1, =0x00110780				@DirectCmd	chip1 EMRS1 (OCD default)
+;	str	r1, [r0, #DMC_DIRECTCMD]
 		
-	ldr	r1, =0x00110400				@DirectCmd	chip1 EMRS1 (OCD exit)
-	str	r1, [r0, #DMC_DIRECTCMD]
+;	ldr	r1, =0x00110400				@DirectCmd	chip1 EMRS1 (OCD exit)
+;	str	r1, [r0, #DMC_DIRECTCMD]
 		
-	ldr	r1, =0x0FF02030				@ConControl	auto refresh on
+	ldr	r1, =0x0FF01030				@ConControl	auto refresh on
 	str	r1, [r0, #DMC_CONCONTROL]
 		
 	ldr	r1, =0xFFFF00FF				@PwrdnConfig
@@ -260,7 +255,7 @@ find_lock_val1:
 	/* settinf fot DDR2 */
 	ldr	r0, =APB_DMC_1_BASE
 
-	ldr	r1, =0x0FFF2010				@auto refresh off
+	ldr	r1, =0x0FFF1010				@auto refresh off
 	str	r1, [r0, #DMC_CONCONTROL]
 
 	ldr	r1, =DMC1_MEMCONTROL			@MemControl	BL=4, 2 chip, DDR2 type, dynamic self refresh, force precharge, dynamic power down off
@@ -300,10 +295,10 @@ find_lock_val1:
 	ldr	r1, =0x00030000				@DirectCmd	chip0 EMRS3
 	str	r1, [r0, #DMC_DIRECTCMD]
 
-	ldr	r1, =0x00010400				@DirectCmd	chip0 EMRS1 (MEM DLL on, DQS# disable)
+	ldr	r1, =0x00010001				@DirectCmd	chip0 EMRS1 (MEM DLL on, DQS# disable)
 	str	r1, [r0, #DMC_DIRECTCMD]
 
-	ldr	r1, =0x00000542				@DirectCmd	chip0 MRS (MEM DLL reset) CL=4, BL=4
+	ldr	r1, =0x00000532				@DirectCmd	chip0 MRS (MEM DLL reset) CL=3, BL=4
 	str	r1, [r0, #DMC_DIRECTCMD]
 
 	ldr	r1, =0x01000000				@DirectCmd	chip0 PALL
@@ -315,52 +310,52 @@ find_lock_val1:
 	ldr	r1, =0x05000000				@DirectCmd	chip0 REFA
 	str	r1, [r0, #DMC_DIRECTCMD]
 
-	ldr	r1, =0x00000442				@DirectCmd	chip0 MRS (MEM DLL unreset)
+	ldr	r1, =0x00000432				@DirectCmd	chip0 MRS (MEM DLL unreset)
 	str	r1, [r0, #DMC_DIRECTCMD]
 
-	ldr	r1, =0x00010780				@DirectCmd	chip0 EMRS1 (OCD default)
+	ldr	r1, =0x00010381				@DirectCmd	chip0 EMRS1 (OCD default)
 	str	r1, [r0, #DMC_DIRECTCMD]
 
-	ldr	r1, =0x00010400				@DirectCmd	chip0 EMRS1 (OCD exit)
+	ldr	r1, =0x00010001				@DirectCmd	chip0 EMRS1 (OCD exit)
 	str	r1, [r0, #DMC_DIRECTCMD]
 
-	ldr	r1, =0x07100000				@DirectCmd	chip1 Deselect
-	str	r1, [r0, #DMC_DIRECTCMD]
+;	ldr	r1, =0x07100000				@DirectCmd	chip1 Deselect
+;	str	r1, [r0, #DMC_DIRECTCMD]
 
-	ldr	r1, =0x01100000				@DirectCmd	chip1 PALL
-	str	r1, [r0, #DMC_DIRECTCMD]
+;	ldr	r1, =0x01100000				@DirectCmd	chip1 PALL
+;	str	r1, [r0, #DMC_DIRECTCMD]
 
-	ldr	r1, =0x00120000				@DirectCmd	chip1 EMRS2
-	str	r1, [r0, #DMC_DIRECTCMD]
+;	ldr	r1, =0x00120000				@DirectCmd	chip1 EMRS2
+;	str	r1, [r0, #DMC_DIRECTCMD]
 
-	ldr	r1, =0x00130000				@DirectCmd	chip1 EMRS3
-	str	r1, [r0, #DMC_DIRECTCMD]
+;	ldr	r1, =0x00130000				@DirectCmd	chip1 EMRS3
+;	str	r1, [r0, #DMC_DIRECTCMD]
 
-	ldr	r1, =0x00110440				@DirectCmd	chip1 EMRS1 (MEM DLL on, DQS# disable)
-	str	r1, [r0, #DMC_DIRECTCMD]
+;	ldr	r1, =0x00110440				@DirectCmd	chip1 EMRS1 (MEM DLL on, DQS# disable)
+;	str	r1, [r0, #DMC_DIRECTCMD]
 
-	ldr	r1, =0x00100542				@DirectCmd	chip1 MRS (MEM DLL reset) CL=4, BL=4
-	str	r1, [r0, #DMC_DIRECTCMD]
+;	ldr	r1, =0x00100542				@DirectCmd	chip1 MRS (MEM DLL reset) CL=4, BL=4
+;	str	r1, [r0, #DMC_DIRECTCMD]
 
-	ldr	r1, =0x01100000				@DirectCmd	chip1 PALL
-	str	r1, [r0, #DMC_DIRECTCMD]
+;	ldr	r1, =0x01100000				@DirectCmd	chip1 PALL
+;	str	r1, [r0, #DMC_DIRECTCMD]
 
-	ldr	r1, =0x05100000				@DirectCmd	chip1 REFA
-	str	r1, [r0, #DMC_DIRECTCMD]
+;	ldr	r1, =0x05100000				@DirectCmd	chip1 REFA
+;	str	r1, [r0, #DMC_DIRECTCMD]
 
-	ldr	r1, =0x05100000				@DirectCmd	chip1 REFA
-	str	r1, [r0, #DMC_DIRECTCMD]
+;	ldr	r1, =0x05100000				@DirectCmd	chip1 REFA
+;	str	r1, [r0, #DMC_DIRECTCMD]
 
-	ldr	r1, =0x00100442				@DirectCmd	chip1 MRS (MEM DLL unreset)
-	str	r1, [r0, #DMC_DIRECTCMD]
+;	ldr	r1, =0x00100442				@DirectCmd	chip1 MRS (MEM DLL unreset)
+;	str	r1, [r0, #DMC_DIRECTCMD]
 
-	ldr	r1, =0x00110780				@DirectCmd	chip1 EMRS1 (OCD default)
-	str	r1, [r0, #DMC_DIRECTCMD]
+;	ldr	r1, =0x00110780				@DirectCmd	chip1 EMRS1 (OCD default)
+;	str	r1, [r0, #DMC_DIRECTCMD]
 
-	ldr	r1, =0x00110400				@DirectCmd	chip1 EMRS1 (OCD exit)
-	str	r1, [r0, #DMC_DIRECTCMD]
+;	ldr	r1, =0x00110400				@DirectCmd	chip1 EMRS1 (OCD exit)
+;	str	r1, [r0, #DMC_DIRECTCMD]
 
-	ldr	r1, =0x0FF02030				@ConControl	auto refresh on
+	ldr	r1, =0x0FF01030				@ConControl	auto refresh on
 	str	r1, [r0, #DMC_CONCONTROL]
 
 	ldr	r1, =0xFFFF00FF				@PwrdnConfig	
@@ -369,7 +364,7 @@ find_lock_val1:
 	ldr	r1, =DMC1_MEMCONTROL			@MemControl	BL=4, 2 chip, DDR2 type, dynamic self refresh, force precharge, dynamic power down off
 	str	r1, [r0, #DMC_MEMCONTROL]
 	
-#else	/* CONFIG_MCP_SINGLE */
+#else	// CONFIG_MCP_AC / CONFIG_MCP_H / CONFIG_MCP_B / CONFIG_MCP_D
 
 	/* DMC0 initialization */
 	ldr	r0, =APB_DMC_0_BASE
@@ -466,10 +461,28 @@ find_lock_val:
 	ldr	r1, =0xFFFF00FF				@PwrdnConfig
 	str	r1, [r0, #DMC_PWRDNCONFIG]
 
+	#if defined CONFIG_MCP_AC
+	ldr	r1, =0x00212113				@MemControl
+	str	r1, [r0, #DMC_MEMCONTROL]
+	#elif defined CONFIG_MCP_H
+	ldr	r1, =0x00212113				@MemControl
+	str	r1, [r0, #DMC_MEMCONTROL]
+	#elif defined CONFIG_MCP_B
 	ldr	r1, =0x00212113				@MemControl
 	str	r1, [r0, #DMC_MEMCONTROL]	
+	#elif defined CONFIG_MCP_D
+	ldr	r1, =0x00212113				@MemControl
+	str	r1, [r0, #DMC_MEMCONTROL]	
+	#elif defined CONFIG_MCP_SINGLE
+	ldr	r1, =0x00212113				@MemControl
+	str	r1, [r0, #DMC_MEMCONTROL]	
+	#else
 
-/* DMC1 initialization */
+	#error "You should define memory type (AC type or H type)"
+
+	#endif	
+
+	/* DMC1 initialization */
 	ldr	r0, =APB_DMC_1_BASE
 
 	ldr	r1, =0x00101000				@Phycontrol0 DLL parameter setting
@@ -546,9 +559,6 @@ find_lock_val1:
 	ldr	r1, =0x00000032				@chip0 MRS
 	str	r1, [r0, #DMC_DIRECTCMD]
 
-	ldr	r1, =0x00020020				@chip0 EMRS
-	str	r1, [r0, #DMC_DIRECTCMD]
-
 	ldr	r1, =0x07100000				@chip1 Deselect
 	str	r1, [r0, #DMC_DIRECTCMD]
 
@@ -564,9 +574,6 @@ find_lock_val1:
 	ldr	r1, =0x00100032				@chip1 MRS
 	str	r1, [r0, #DMC_DIRECTCMD]
 
-	ldr	r1, =0x00120020				@chip0 EMRS
-	str	r1, [r0, #DMC_DIRECTCMD]
-
 	ldr	r1, =0x0FFF10B0				@ConControl auto refresh on
 	str	r1, [r0, #DMC_CONCONTROL]
 
@@ -576,8 +583,7 @@ find_lock_val1:
 	ldr	r1, =0x00212113				@MemControl
 	str	r1, [r0, #DMC_MEMCONTROL]
 
-#endif	/* CONFIG_MCP_AC / CONFIG_MCP_H / CONFIG_MCP_B / CONFIG_MCP_D */
-
+#endif
 	mov	pc, lr
 
 

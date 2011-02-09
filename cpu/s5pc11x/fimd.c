@@ -1,12 +1,6 @@
 /*
- * Copyright (c) 2010 Samsung Electronics Co., Ltd.
- *              http://www.samsung.com/
- *
  * S5PC110 - LCD Driver for U-Boot
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
  */
 
 #include <common.h>
@@ -14,9 +8,9 @@
 #include <asm/types.h>
 
 #define LCD_BGCOLOR		0x1428A0
+#define LCD_FBUFFER		0x48000000
 
 static unsigned int gFgColor = 0xFF;
-static unsigned int gLeftColor = LCD_BGCOLOR;
 
 #define Inp32(_addr)		readl(_addr)
 #define Outp32(addr, data)	(*(volatile u32 *)(addr) = (data))
@@ -202,13 +196,16 @@ void LCDM_InitTL2796(void)
 
 void LCD_Initialize_TL2796(void)
 {
-	u32 uFbAddr = CFG_LCD_FBUFFER;
+	u32 uFbAddr = LCD_FBUFFER;
 
 	u32 i,uTmpReg;
 	u32* pBuffer = (u32*)uFbAddr;
 
 
-	LCD_setprogress(0);
+	for (i=0; i < LCD_WIDTH*LCD_HEIGHT; i++)
+	{
+		*pBuffer++ = LCD_BGCOLOR;
+	}
 
 
 	uTmpReg = Inp32(0xE0107008);		// need to be changed later (09.01.23 WJ.Kim)	
@@ -323,11 +320,11 @@ void LCD_Initialize_TL2796(void)
  */
 
 #define LCD_WIDTH		1366
-#define LCD_HEIGHT		500	//766
+#define LCD_HEIGHT		1000	//766
 
 void LCD_Initialize_NONAME1(void)
 {
-	u32 uFbAddr = CFG_LCD_FBUFFER;
+	u32 uFbAddr = LCD_FBUFFER;
 
 	u32 i;
 	u32* pBuffer = (u32*)uFbAddr;
@@ -443,15 +440,17 @@ void LCD_Initialize_NONAME1(void)
 	Outp32(0xf8000020, 0x802d);
 	Outp32(0xf8000034, 0x1);
 //	Outp32(0xf8000000, 0x257);
-//	Outp32(0xf8000000, 0x57); //===> MPLL should be 667 !!!!
-	Outp32(0xf8000000, 0x53);
-	Outp32(0xf8000010, 0x60400);
+	Outp32(0xf8000000, 0x57); //===> MPLL should be 667 !!!!
 	Outp32(0xf80001a4, 0x3);
 
 	Outp32(0xe0107008,0x2); //syscon output path
 	Outp32(0xe0100204,0x700000); //syscon fimdclk = mpll
 
-	LCD_setprogress(0);
+	for (i=0; i < LCD_WIDTH*LCD_HEIGHT; i++)
+	{
+		*pBuffer++ = LCD_BGCOLOR;
+	}
+
 }
 #else
 // "No LCD Type is defined!"
@@ -473,35 +472,20 @@ void LCD_setfgcolor(unsigned int color)
 	gFgColor = color;
 }
 
-void LCD_setleftcolor(unsigned int color)
-{
-	gLeftColor = color;
-}
-
 void LCD_setprogress(int percentage)
 {
 #if defined(CFG_LCD_TL2796) || defined(CFG_LCD_NONAME1)
 	u32 i, j;
-	u32* pBuffer = (u32*)CFG_LCD_FBUFFER;
+	u32* pBuffer = (u32*)LCD_FBUFFER;
 
-	for (i=0; i < (LCD_HEIGHT/100)*percentage; i++)
+	for (i=0; i < (LCD_WIDTH*LCD_HEIGHT/100)*percentage; i++)
 	{
-		for (j=0; j < LCD_WIDTH; j++)
-		{
-			*pBuffer++ = gFgColor;
-		}
+		*pBuffer++ = gFgColor;
 	}
 
-	for (; i < LCD_HEIGHT; i++)
+	for (; i < LCD_WIDTH*LCD_HEIGHT; i++)
 	{
-		for (j=0; j < (LCD_WIDTH >> 5); j++)
-		{
-			*pBuffer++ = gLeftColor;
-		}
-		for (; j < LCD_WIDTH; j++)
-		{
-			*pBuffer++ = LCD_BGCOLOR;
-		}
+		*pBuffer++ = LCD_BGCOLOR;
 	}
 #endif
 }

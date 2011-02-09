@@ -78,7 +78,7 @@ struct mmc *find_mmc_device(int dev_num)
 }
 
 static ulong
-mmc_bread_primitive(int dev_num, ulong start, lbaint_t blkcnt, void *dst)
+mmc_bread(int dev_num, ulong start, lbaint_t blkcnt, void *dst)
 {
 	struct mmc *host = find_mmc_device(dev_num);
 	int err;
@@ -119,26 +119,6 @@ mmc_bread_primitive(int dev_num, ulong start, lbaint_t blkcnt, void *dst)
 	}
 
 	return blkcnt;
-}
-
-#define MAXBLKCNT	0xFFFF
-static ulong
-mmc_bread(int dev_num, ulong start, lbaint_t blkcnt, void *dst)
-{
-	lbaint_t blkcnt_tmp = blkcnt;
-	ulong ret = 0;
-
-	while (blkcnt_tmp >= MAXBLKCNT)
-	{
-		ret += mmc_bread_primitive(dev_num, start, MAXBLKCNT, dst);
-
-		start += MAXBLKCNT;
-		dst += MAXBLKCNT * 512;
-		blkcnt_tmp -= MAXBLKCNT;
-	}
-	ret += mmc_bread_primitive(dev_num, start, blkcnt_tmp, dst);
-
-	return ret;
 }
 
 static ulong

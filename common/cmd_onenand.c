@@ -12,6 +12,7 @@
 #include <common.h>
 #include <command.h>
 #include <malloc.h>
+#include <cmd_onenand.h>
 
 #include <linux/mtd/compat.h>
 #include <linux/mtd/mtd.h>
@@ -27,10 +28,8 @@
 extern struct mtd_info onenand_mtd;
 static struct mtd_info *mtd;
 
-#if 0	// incomplete - a firm BBM scheme is required.
 static loff_t next_ofs;
 static loff_t skip_ofs;
-#endif
 
 static inline int str2long(char *p, ulong *num)
 {
@@ -142,13 +141,7 @@ extern int onenand_block_write(loff_t to, size_t len,
 	loff_t ofs;
 	size_t _retlen = 0;
 	int ret;
-#if defined(CONFIG_S5PC110) && defined(CONFIG_EVT1) && !defined(CONFIG_FUSED)
-	int i;
-	ulong checksum;
-	uint8_t *ptr;
-#endif
 
-#if 0	// incomplete code
 	if (to == next_ofs) {
 		next_ofs = to + len;
 		to += skip_ofs;
@@ -156,7 +149,6 @@ extern int onenand_block_write(loff_t to, size_t len,
 		next_ofs = to + len;
 		skip_ofs = 0;
 	}
-#endif
 	ofs = to;
 
 	if (ofs & (mtd->erasesize - 1)) {
@@ -170,17 +162,6 @@ extern int onenand_block_write(loff_t to, size_t len,
 		return 1;
 	}
 
-#if defined(CONFIG_S5PC110) && defined(CONFIG_EVT1) && !defined(CONFIG_FUSED)
-	if (to == 0) {
-		ptr = buf + 16;
-		for(i = 16, checksum = 0; i < 8192; i++) {
-			checksum += *ptr;
-			ptr++;
-		}
-		*((volatile u32 *)(buf + 0x8)) = checksum;
-	}
-#endif
-
 	printk("Main area write (%d blocks):\n", blocks);
 
 	while (blocks) {
@@ -188,14 +169,14 @@ extern int onenand_block_write(loff_t to, size_t len,
 		if (ret) {
 			printk("Bad blocks %d at 0x%x is skipped.\n",
 			       (u32)(ofs >> this->erase_shift), (u32)ofs);
-			//skip_ofs += blocksize;
+			skip_ofs += blocksize;
 			goto next;
 		}
 
 		ret = mtd->write(mtd, ofs, blocksize, &_retlen, buf);
 		if (ret) {
 			printk("Write failed 0x%x, %d", (u32)ofs, ret);
-			//skip_ofs += blocksize;
+			skip_ofs += blocksize;
 			goto next;
 		}
 

@@ -124,9 +124,6 @@ void dev_print (block_dev_desc_t *dev_desc)
 			dev_desc->revision,
 			dev_desc->product);
 		break;
-	case IF_TYPE_MMC:
-		printf ("is available\n");
-		break;
 	case IF_TYPE_UNKNOWN:
 	default:
 		puts ("not available\n");
@@ -137,7 +134,7 @@ void dev_print (block_dev_desc_t *dev_desc)
 		puts ("Removable ");
 	switch (dev_desc->type & 0x1F) {
 	case DEV_TYPE_HARDDISK:
-		puts ("Disk");
+		puts ("Hard Disk");
 		break;
 	case DEV_TYPE_CDROM:
 		puts ("CD ROM");

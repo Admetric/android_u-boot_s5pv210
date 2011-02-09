@@ -1,8 +1,5 @@
-.ifdef S5PV210
 .equ CONFIG_SMDKV210,		0x1
-.else
-.equ CONFIG_SMDKC110B,		0x1
-.endif
+@.equ CONFIG_SMDKC110B,		0x1
 .equ SYNC_16BURST_83M,		0x1
 
 @;.equ CONFIG_CLK_533_133_100_100,	0x1
@@ -96,7 +93,6 @@
  * Clock & Power Controller for s5pc110
  */
 .equ ELFIN_CLOCK_POWER_BASE,		0xE0100000
-.equ RST_STAT_OFFSET,				0xa000
 
 .equ IO_RET_REL,		((1 << 31) | (1 << 29) | (1 << 28))
 
@@ -598,19 +594,6 @@
 .else
 .equ ONENAND_IF_CTRL_REG_VAL,		0x40E0
 .endif	@;SYNC_16BURST_83M
-
-.equ PS_HOLD_CONTROL_OFFSET,		0xe81c
-
-/* INFORM register */
-.equ INF_REG_BASE,	0xE010F000
-.equ INF_REG0_OFFSET,	0x00
-.equ INF_REG1_OFFSET,	0x04
-.equ INF_REG2_OFFSET,	0x08
-.equ INF_REG3_OFFSET,	0x0c
-.equ INF_REG4_OFFSET,	0x10
-.equ INF_REG5_OFFSET,	0x14
-.equ INF_REG6_OFFSET,	0x18
-.equ INF_REG7_OFFSET,	0x1c
 
 /*
  * Watchdog timer

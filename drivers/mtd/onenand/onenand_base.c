@@ -1509,7 +1509,7 @@ static int onenand_read_oob_nolock(struct mtd_info *mtd, loff_t from,
 
 	stats = mtd->ecc_stats;
 	
-	readcmd = ONENAND_NO_OOB_CMD(this) ? ONENAND_CMD_READ : ONENAND_CMD_READOOB;
+	readcmd = ONENAND_IS_MLC(this) ? ONENAND_CMD_READ : ONENAND_CMD_READOOB;
 
 	while (read < len) {
 		thislen = oobsize - column;
@@ -1650,9 +1650,8 @@ static int onenand_bbt_wait(struct mtd_info *mtd, int state)
 	if (interrupt & ONENAND_INT_READ) {
 		int ecc = onenand_read_ecc(this);
 		if (ecc & ONENAND_UNCORRECTABLE_ERROR) {
-#ifdef ONENAND_DEBUG
-			printk(KERN_INFO "onenand_bbt_wait: uncorrectable ecc error (controller status: 0x%04x)\n", ctrl);
-#endif
+			printk(KERN_INFO "onenand_bbt_wait: ecc error = 0x%04x"
+				", controller error 0x%04x\n", ecc, ctrl);
 			return ONENAND_BBT_READ_ECC_ERROR;
 		}			
 	} else {
@@ -1704,7 +1703,7 @@ int onenand_bbt_read_oob(struct mtd_info *mtd, loff_t from,
 
 	column = from & (mtd->oobsize - 1);
 
-	readcmd = ONENAND_NO_OOB_CMD(this) ? ONENAND_CMD_READ : ONENAND_CMD_READOOB;
+	readcmd = ONENAND_IS_MLC(this) ? ONENAND_CMD_READ : ONENAND_CMD_READOOB;
 	
 	while (read < len) {
 		thislen = mtd->oobsize - column;
@@ -1757,7 +1756,7 @@ static int onenand_verify_oob(struct mtd_info *mtd, const u_char *buf, loff_t to
 	u_char *oob_buf = this->oob_buf;
 	int status, i, readcmd;
 
-	readcmd = ONENAND_NO_OOB_CMD(this) ? ONENAND_CMD_READ : ONENAND_CMD_READOOB;
+	readcmd = ONENAND_IS_MLC(this) ? ONENAND_CMD_READ : ONENAND_CMD_READOOB;
 	
 	this->command(mtd, readcmd, to, mtd->oobsize);
 	onenand_update_bufferram(mtd, to, 0);
@@ -2096,7 +2095,7 @@ static int onenand_write_oob_nolock(struct mtd_info *mtd, loff_t to,
 
 	oobbuf = this->oob_buf;
 
-	oobcmd = ONENAND_NO_OOB_CMD(this) ? ONENAND_CMD_PROG : ONENAND_CMD_PROGOOB;
+	oobcmd = (ONENAND_IS_MLC(this) || ONENAND_IS_SINGLE_DATARAM(this)) ? ONENAND_CMD_PROG : ONENAND_CMD_PROGOOB;
 	
 	/* Loop until all data write */
 	while (written < len) {
@@ -2113,7 +2112,7 @@ static int onenand_write_oob_nolock(struct mtd_info *mtd, loff_t to,
 			memcpy(oobbuf + column, buf, thislen);
 		this->write_bufferram(mtd, ONENAND_SPARERAM, oobbuf, 0, mtd->oobsize);
 
-		if (ONENAND_NO_OOB_CMD(this)) {
+		if (ONENAND_IS_MLC(this) || ONENAND_IS_SINGLE_DATARAM(this)) {
 			/* Set main area of DataRAM to 0xff*/
 			memset(this->page_buf, 0xff, mtd->writesize);
 			this->write_bufferram(mtd, ONENAND_DATARAM,
@@ -2299,14 +2298,12 @@ int onenand_erase(struct mtd_info *mtd, struct erase_info *instr)
 	instr->state = MTD_ERASING;
 
 	while (len) {
-#if 0
 		/* Check if we have a bad block, we do not erase bad blocks */
 		if (onenand_block_isbad_nolock(mtd, addr, 0)) {
 			printk (KERN_WARNING "onenand_erase: attempt to erase a bad block at addr 0x%012llx\n", (unsigned long long) addr);
 			instr->state = MTD_ERASE_FAILED;
 			goto erase_exit;
 		}
-#endif
 
 		this->command(mtd, ONENAND_CMD_ERASE, addr, block_size);
 
@@ -2673,7 +2670,6 @@ static void onenand_check_features(struct mtd_info *mtd)
 
 	case 0x50:	/* 4Gb SDP, 4KB page */
 	case 0x68:	/* 8Gb DDP, 4KB page */
-	case 0x60:	/* 8Gb SDP, 4KB page */
 		this->options |= ONENAND_PAGE_EQUALS_DATARAM;
 		this->options |= ONENAND_OTP_LOCK_OFFSET_IN_MAIN;
 		this->options |= ONENAND_HAS_UNLOCK_ALL;
@@ -3255,9 +3251,7 @@ int onenand_scan(struct mtd_info *mtd, int maxchips)
 	/* Set pfn_onenand_read_ops_nolock after probing */
 	if (this->read_word(this->base + ONENAND_REG_SYS_CFG1)
 		& ONENAND_SYS_CFG1_SYNC_READ) {
-#ifdef ONENAND_DEBUG
-		printk(KERN_INFO "OneNAND Sync. Burst Read support\n");
-#endif
+		//printk(KERN_INFO "OneNAND Sync. Burst Read support\n");
 		if (ONENAND_IS_SINGLE_DATARAM(this))
 			pfn_onenand_read_ops_nolock = onenand_multiple_read_ops_nolock;
 		else
@@ -3300,7 +3294,12 @@ int onenand_scan(struct mtd_info *mtd, int maxchips)
 	switch (mtd->oobsize) {
 	case 128:
 		this->ecclayout = &onenand_oob_128;
-		mtd->subpage_sft = 0;
+		if (ONENAND_IS_MLC(this)) {
+			mtd->subpage_sft = 0;
+		} else {
+			/* FIXME : Check in data sheet */
+			mtd->subpage_sft = 2;
+		}
 		break;
 		
 	case 64:

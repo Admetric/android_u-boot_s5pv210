@@ -58,8 +58,7 @@
 #define FALSE	0
 #define SUSPEND_RESUME_ON FALSE
 
-u32 s3c_usbd_dn_addr = 0;
-u32 s3c_usbd_dn_cnt = 0;
+u32 s3c_usbd_dn_addr;
 u32 remode_wakeup;
 u16 config_value;
 

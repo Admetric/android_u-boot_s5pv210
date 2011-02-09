@@ -9,8 +9,7 @@ void setup_hsmmc_clock(void)
 	u32 tmp;
 	u32 clock;
 	u32 i;
-	u32 mpll_divide;
-	mpll_divide = (CLK_DIV0_REG & (0x1 << 4)) >> 4;
+
 #ifdef OM_PIN
 	if(OM_PIN == SDMMC_CHANNEL0) {
 		/* MMC0 clock src = SCLKMPLL */
@@ -19,8 +18,7 @@ void setup_hsmmc_clock(void)
 
 		/* MMC0 clock div */
 		tmp = CLK_DIV1_REG & ~(0xf<<0);
-		clock = get_MPLL_CLK()/1000000/(mpll_divide + 1);
-		//clock = get_MPLL_CLK()/1000000;
+		clock = get_MPLL_CLK()/1000000;
 
 		for(i=0; i<0xf; i++)
 		{

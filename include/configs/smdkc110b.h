@@ -29,18 +29,17 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
+//#define FPGA_SMDKC110
+
 /*
  * High Level Configuration Options
  * (easy to change)
  */
-#define CONFIG_S5PC110		1		/* in a SAMSUNG S5PC110 SoC */
-#define CONFIG_S5PC11X		1		/* in a SAMSUNG S5PC11X Family  */
+#define CONFIG_S5PC110		1		/* in a SAMSUNG S3C6410 SoC */
+#define CONFIG_S5PC11X		1		/* in a SAMSUNG S3C64XX Family  */
 #define CONFIG_SMDKC110		1
 #define CONFIG_MCP_B		1		/* OneDRAM + mDDR */
 #define CONFIG_EVT1		1		/* EVT1 */
-
-//#define CONFIG_FUSED		1		/* Fused chip */
-//#define CONFIG_SECURE		1		/* secure booting */
 
 #define BOOT_ONENAND		0x1
 #define BOOT_NAND		0x2
@@ -400,7 +399,7 @@
 #define DMC1_MEMCONFIG_0	0x40F01322
 #define DMC1_MEMCONFIG_1	0x50F81312
 #define DMC1_TIMINGA_REF	0x00000618
-#define DMC1_TIMING_ROW		0x18344309
+#define DMC1_TIMING_ROW		0x11344309
 #define DMC1_TIMING_DATA	0x12130005
 #define	DMC1_TIMING_PWR		0x0E190222
 #if defined(CONFIG_CLK_800_100_166_133) || defined(CONFIG_CLK_400_100_166_133) || defined(CONFIG_CLK_100_100_166_133)

@@ -81,6 +81,7 @@ typedef enum {
 #define BIT30				0x40000000
 #define BIT31				0x80000000
 
+
 /* S5PC110 device base addresses */
 #define ELFIN_DMA_BASE			0xE0900000
 #define ELFIN_LCD_BASE			0xF8000000
@@ -504,9 +505,11 @@ typedef enum {
 #define GPH3DRV_OFFSET			0xc6c
 
 
-#define GPICON_OFFSET 			0x220 
+#define GPICON_OFFSET 			0x220
+#define GPIDAT_OFFSET                   0x224 
 #define GPIPUD_OFFSET 			0x228 
-#define GPIDRV_OFFSET_SR 		0x22C 
+#define GPIDRV_OFFSET_SR 		0x22C
+#define GPICONPDN_OFFSET                0x230 
 #define GPIPUDPDN_OFFSET 		0x234 
 
 #define GPJ0CON_OFFSET 			0x240 
@@ -565,6 +568,20 @@ typedef enum {
 #define MP03CONPDN_OFFSET               0x330 
 #define MP03PUDPDN_OFFSET               0x334
 
+#define MP04CON_OFFSET                  0x340
+#define MP04DAT_OFFSET                  0x344
+#define MP04PUD_OFFSET                  0x348
+#define MP04DRV_SR_OFFSET               0x34C
+#define MP04CONPDN_OFFSET               0x350
+#define MP04PUDPDN_OFFSET               0x354
+
+#define MP05CON_OFFSET                  0x360
+#define MP05DAT_OFFSET                  0x364
+#define MP05PUD_OFFSET                  0x368
+#define MP05DRV_SR_OFFSET               0x36C
+#define MP05CONPDN_OFFSET               0x370
+#define MP05PUDPDN_OFFSET               0x374
+
 #define MP06CON_OFFSET                  0x380
 #define MP06DAT_OFFSET                  0x384
 #define MP06PUD_OFFSET                  0x388
@@ -578,6 +595,10 @@ typedef enum {
 #define MP07DRV_SR_OFFSET               0x3AC
 #define MP07CONPDN_OFFSET               0x3B0
 #define MP07PUDPDN_OFFSET               0x3B4
+
+#define ETC2PUD_OFFSET                  0x648
+#define ETC2DRV_SR_OFFSET               0x64C
+
 
 #define GPA0CON				(ELFIN_GPIO_BASE + GPA0CON_OFFSET)	 
 #define GPA0DAT				(ELFIN_GPIO_BASE + GPA0DAT_OFFSET)		 
@@ -1032,42 +1053,57 @@ typedef enum {
  * OneNAND Controller
  *************************************************************/
 #define ELFIN_ONENAND_BASE		0xB0000000
-#define ELFIN_ONENANDCON_BASE		(ELFIN_ONENAND_BASE + 0x600000)
 
-#define ONENAND_IF_CTRL_OFFSET			0x100
-#define ONENAND_IF_CMD_OFFSET			0x104
-#define ONENAND_IF_ASYNC_TIMING_CTRL_OFFSET	0x108
-#define ONENAND_IF_STATUS_OFFSET		0x10C
-#define DMA_SRC_ADDR_OFFSET			0x400
-#define DMA_SRC_CFG_OFFSET			0x404
-#define DMA_DST_ADDR_OFFSET			0x408
-#define DMA_DST_CFG_OFFSET			0x40C
-#define DMA_TRANS_SIZE_OFFSET			0x414
-#define DMA_TRANS_CMD_OFFSET			0x418
-#define DMA_TRANS_STATUS_OFFSET			0x41C
-#define DMA_TRANS_DIR_OFFSET			0x420
-#define SQC_SAO_OFFSET				0x600
-#define SQC_CMD_OFFSET				0x608
-#define SQC_STATUS_OFFSET			0x60C
-#define SQC_CAO_OFFSET				0x610
-#define SQC_REG_CTRL_OFFSET			0x614
-#define SQC_REG_VAL_OFFSET			0x618
-#define SQC_BRPAO0_OFFSET			0x620
-#define SQC_BRPAO1_OFFSET			0x624
-#define INTC_SQC_CLR_OFFSET			0x1000
-#define INTC_DMA_CLR_OFFSET			0x1004
-#define INTC_ONENAND_CLR_OFFSET			0x1008
-#define INTC_SQC_MASK_OFFSET			0x1020
-#define INTC_DMA_MASK_OFFSET			0x1024
-#define INTC_ONENAND_MASK_OFFSET		0x1028
-#define INTC_SQC_PEND_OFFSET			0x1040
-#define INTC_DMA_PEND_OFFSET			0x1044
-#define INTC_ONENAND_PEND_OFFSET		0x1048
-#define INTC_SQC_STATUS_OFFSET			0x1060
-#define INTC_DMA_STATUS_OFFSET			0x1064
-#define INTC_ONENAND_STATUS_OFFSET		0x1068
+#define ONENAND_REG_MEM_CFG 		(0x000)
+#define ONENAND_REG_BURST_LEN 		(0x010)
+#define ONENAND_REG_MEM_RESET 		(0x020)
+#define ONENAND_REG_INT_ERR_STAT 	(0x030)
+#define ONENAND_REG_INT_ERR_MASK 	(0x040)
+#define ONENAND_REG_INT_ERR_ACK 	(0x050)
+#define ONENAND_REG_ECC_ERR_STAT_1 	(0x060)
+#define ONENAND_REG_MANUFACT_ID 	(0x070)
+#define ONENAND_REG_DEVICE_ID 		(0x080)
+#define ONENAND_REG_DATA_BUF_SIZE	(0x090)
+#define ONENAND_REG_BOOT_BUF_SIZE 	(0x0A0)
+#define ONENAND_REG_BUF_AMOUNT 		(0x0B0)
+#define ONENAND_REG_TECH 		(0x0C0)
+#define ONENAND_REG_FBA_WIDTH 		(0x0D0)
+#define ONENAND_REG_FPA_WIDTH 		(0x0E0)
+#define ONENAND_REG_FSA_WIDTH 		(0x0F0)
+#define ONENAND_REG_REVISION 		(0x100)
+#define ONENAND_REG_SYNC_MODE 		(0x130)
+#define ONENAND_REG_TRANS_SPARE 	(0x140)
+#define ONENAND_REG_PAGE_CNT 		(0x170)
+#define ONENAND_REG_ERR_PAGE_ADDR 	(0x180)
+#define ONENAND_REG_BURST_RD_LAT 	(0x190)
+#define ONENAND_REG_INT_PIN_ENABLE 	(0x1A0)
+#define ONENAND_REG_INT_MON_CYC 	(0x1B0)
+#define ONENAND_REG_ACC_CLOCK 		(0x1C0)
+#define ONENAND_REG_ERR_BLK_ADDR 	(0x1E0)
+#define ONENAND_REG_FLASH_VER_ID 	(0x1F0)
+#define ONENAND_REG_BANK_EN 		(0x220)
+#define ONENAND_REG_WTCHDG_RST_L 	(0x260)
+#define ONENAND_REG_WTCHDG_RST_H 	(0x270)
+#define ONENAND_REG_SYNC_WRITE 		(0x280)
+#define ONENAND_REG_CACHE_READ 		(0x290)
+#define ONENAND_REG_COLD_RST_DLY 	(0x2A0)
+#define ONENAND_REG_DDP_DEVICE 		(0x2B0)
+#define ONENAND_REG_MULTI_PLANE 	(0x2C0)
+#define ONENAND_REG_MEM_CNT 		(0x2D0)
+#define ONENAND_REG_TRANS_MODE 		(0x2E0)
+#define ONENAND_REG_DEV_STAT 		(0x2F0)
+#define ONENAND_REG_ECC_ERR_STAT_2 	(0x300)
+#define ONENAND_REG_ECC_ERR_STAT_3 	(0x310)
+#define ONENAND_REG_ECC_ERR_STAT_4 	(0x320)
+#define ONENAND_REG_EFCT_BUF_CNT 	(0x330)
+#define ONENAND_REG_DEV_PAGE_SIZE 	(0x340)
+#define ONENAND_REG_SUPERLOAD_EN 	(0x350)
+#define ONENAND_REG_CACHE_PRG_EN 	(0x360)
+#define ONENAND_REG_SINGLE_PAGE_BUF 	(0x370)
+#define ONENAND_REG_OFFSET_ADDR 	(0x380)
+#define ONENAND_REG_INT_MON_STATUS 	(0x390)
 
-#if 0
+
 #define ONENAND_MEM_CFG_SYNC_READ	(1 << 15)
 #define ONENAND_MEM_CFG_BRL_7		(7 << 12)
 #define ONENAND_MEM_CFG_BRL_6		(6 << 12)
@@ -1170,42 +1206,6 @@ typedef enum {
 #define ONENAND_DATAIN_RMW_MODIFY	(0x11)
 
 /*
- * Command Mapping for S5PC110 OneNAND Controller
- */
-#define ONENAND_AHB_ADDR		(0xB0000000)
-#define ONENAND_DUMMY_ADDR		(0xB0400000)
-#define ONENAND_CMD_SHIFT		(26)
-#define ONENAND_CMD_MAP_00		(0x0)
-#define ONENAND_CMD_MAP_01		(0x1)
-#define ONENAND_CMD_MAP_10		(0x2)
-#define ONENAND_CMD_MAP_11		(0x3)
-#define ONENAND_CMD_MAP_FF		(0xF)
-
-/*
- * Mask for Mapping table
- */
-#define ONENAND_MEM_ADDR_MASK		(0xffffff)
-#define ONENAND_DDP_SHIFT_1Gb		(22)
-#define ONENAND_DDP_SHIFT_2Gb		(23)
-#define ONENAND_DDP_SHIFT_4Gb		(24)
-#define ONENAND_FBA_SHIFT		(13)
-#define ONENAND_FPA_SHIFT		(7)
-#define ONENAND_FSA_SHIFT		(5)
-#define ONENAND_FBA_MASK_128Mb		(0xff)
-#define ONENAND_FBA_MASK_256Mb		(0x1ff)
-#define ONENAND_FBA_MASK_512Mb		(0x1ff)
-#define ONENAND_FBA_MASK_1Gb_DDP	(0x1ff)
-#define ONENAND_FBA_MASK_1Gb		(0x3ff)
-#define ONENAND_FBA_MASK_2Gb_DDP	(0x3ff)
-#define ONENAND_FBA_MASK_2Gb		(0x7ff)
-#define ONENAND_FBA_MASK_4Gb_DDP	(0x7ff)
-#define ONENAND_FBA_MASK_4Gb		(0xfff)
-#define ONENAND_FPA_MASK		(0x3f)
-#define ONENAND_FSA_MASK		(0x3)
-
-#endif
-
-/*
  * Device ID Register F001h (R)
  */
 #define ONENAND_DEVICE_DENSITY_SHIFT	(4)
@@ -1254,6 +1254,40 @@ typedef enum {
 #define ONENAND_CMD_WP_STATUS		(0xE1)
 #define ONENAND_CMD_PIPELINE_READ	(0x01)
 #define ONENAND_CMD_PIPELINE_WRITE	(0x81)
+
+/*
+ * Command Mapping for S5PC110 OneNAND Controller
+ */
+#define ONENAND_AHB_ADDR		(0xB0000000)
+#define ONENAND_DUMMY_ADDR		(0xB0400000)
+#define ONENAND_CMD_SHIFT		(26)
+#define ONENAND_CMD_MAP_00		(0x0)
+#define ONENAND_CMD_MAP_01		(0x1)
+#define ONENAND_CMD_MAP_10		(0x2)
+#define ONENAND_CMD_MAP_11		(0x3)
+#define ONENAND_CMD_MAP_FF		(0xF)
+
+/*
+ * Mask for Mapping table
+ */
+#define ONENAND_MEM_ADDR_MASK		(0xffffff)
+#define ONENAND_DDP_SHIFT_1Gb		(22)
+#define ONENAND_DDP_SHIFT_2Gb		(23)
+#define ONENAND_DDP_SHIFT_4Gb		(24)
+#define ONENAND_FBA_SHIFT		(13)
+#define ONENAND_FPA_SHIFT		(7)
+#define ONENAND_FSA_SHIFT		(5)
+#define ONENAND_FBA_MASK_128Mb		(0xff)
+#define ONENAND_FBA_MASK_256Mb		(0x1ff)
+#define ONENAND_FBA_MASK_512Mb		(0x1ff)
+#define ONENAND_FBA_MASK_1Gb_DDP	(0x1ff)
+#define ONENAND_FBA_MASK_1Gb		(0x3ff)
+#define ONENAND_FBA_MASK_2Gb_DDP	(0x3ff)
+#define ONENAND_FBA_MASK_2Gb		(0x7ff)
+#define ONENAND_FBA_MASK_4Gb_DDP	(0x7ff)
+#define ONENAND_FBA_MASK_4Gb		(0xfff)
+#define ONENAND_FPA_MASK		(0x3f)
+#define ONENAND_FSA_MASK		(0x3)
 
 /*
  * System Configuration 1 Register F221h (R, R/W)

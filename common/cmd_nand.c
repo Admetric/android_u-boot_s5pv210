@@ -47,129 +47,6 @@ int find_dev_and_part(const char *id, struct mtd_device **dev,
 
 extern nand_info_t nand_info[];       /* info for NAND chips */
 
-int nand_block_read(struct mtd_info *mtd, loff_t from, size_t len,
-		size_t *retlen, u_char *buf)
-{
-	struct nand_chip *this = mtd->priv;
-	int eraseshift = this->phys_erase_shift;
-	int blocks = (int) len >> eraseshift;
-	int blocksize = (1 << eraseshift);
-	loff_t ofs = from;
-	struct mtd_oob_ops ops = {
-		.retlen		= 0,
-	};
-	int ret;
-
-	if (ofs & (blocksize - 1)) {
-		printk(" ERROR: Starting address 0x%x is not a block start address\n",
-				(unsigned int) ofs);
-		return 1;
-	}
-
-	if (len & (blocksize - 1)) {
-		printk(" ERROR: Length (0x%x) is not block aligned\n", (unsigned int) len);
-		return 1;
-	}
-
-	printk("Main area read (%d blocks):\n", blocks);
-
-	ops.len = blocksize;
-	*retlen = 0;
-
-	while (blocks) {
-		ret = mtd->block_isbad(mtd, ofs);
-		if (ret) {
-			printk("Bad blocks %d at 0x%x is skipped\n",
-			       (u32)(ofs >> eraseshift), (u32)ofs);
-			ofs += blocksize;
-			continue;
-		}
-
-		ops.datbuf = buf;
-
-		ops.retlen = 0;
-		ret = mtd->read_oob(mtd, ofs, &ops);
-		if (ret) {
-			printk("Read failed 0x%x, %d\n", (u32)ofs, ret);
-			ofs += blocksize;
-			continue;
-		}
-		ofs += blocksize;
-		buf += blocksize;
-		blocks--;
-		*retlen += ops.retlen;
-	}
-
-	return 0;
-}
-
-int nand_block_write(struct mtd_info *mtd, loff_t to, size_t len,
-		size_t *retlen, const u_char * buf)
-{
-	struct nand_chip *this = mtd->priv;
-	int eraseshift = this->phys_erase_shift;
-	int blocks = len >> eraseshift;
-	int blocksize = (1 << eraseshift);
-	loff_t ofs;
-	size_t _retlen = 0;
-	int ret;
-#if defined(CONFIG_S5PC110) && defined(CONFIG_EVT1) && !defined(CONFIG_FUSED)
-	int i;
-	ulong checksum;
-	uint8_t *ptr;
-#endif
-
-	ofs = to;
-
-	if (ofs & (blocksize - 1)) {
-		printk(" ERROR: Starting address 0x%x is not a block start address\n",
-				(unsigned int) ofs);
-		return 1;
-	}
-
-	if (len & (blocksize - 1)) {
-		printk(" ERROR: Length (0x%x) is not block aligned\n", (unsigned int) len);
-		return 1;
-	}
-
-#if defined(CONFIG_S5PC110) && defined(CONFIG_EVT1) && !defined(CONFIG_FUSED)
-	if (to == 0) {
-		ptr = buf + 16;
-		for(i = 16, checksum = 0; i < 8192; i++) {
-			checksum += *ptr;
-			ptr++;
-		}
-		*((volatile u32 *)(buf + 0x8)) = checksum;
-	}
-#endif
-
-	printk("Main area write (%d blocks):\n", blocks);
-	*retlen = 0;
-
-	while (blocks) {
-		ret = mtd->block_isbad(mtd, ofs);
-		if (ret) {
-			printk("Bad blocks %d at 0x%x is skipped\n",
-			       (u32)(ofs >> eraseshift), (u32)ofs);
-			goto next;
-		}
-
-		ret = mtd->write(mtd, ofs, blocksize, &_retlen, buf);
-		if (ret) {
-			printk("Write failed 0x%x, %d", (u32)ofs, ret);
-			goto next;
-		}
-
-		buf += blocksize;
-		blocks--;
-		*retlen += _retlen;
-next:
-		ofs += blocksize;
-	}
-
-	return 0;
-}
-
 static int nand_dump_oob(nand_info_t *nand, ulong off)
 {
 	return 0;
@@ -512,9 +389,9 @@ int do_nand(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 #endif
  		} else {
 			if (read)
-				ret = nand_block_read(nand, off, size, &size, (u_char *)addr);
+				ret = nand_read(nand, off, &size, (u_char *)addr);
 			else {
-				ret = nand_block_write(nand, off, size, &size, (u_char *)addr);
+				ret = nand_write(nand, off, &size, (u_char *)addr);
 
 				if (ret == 0) {
 					uint *magic = (uint*)(PHYS_SDRAM_1);
@@ -642,7 +519,6 @@ U_BOOT_CMD(nand, 5, 1, do_nand,
 	"nand lock [tight] [status] - bring nand to lock state or display locked pages\n"
 	"nand unlock [offset] [size] - unlock section\n");
 
-#if 0
 static int nand_load_image(cmd_tbl_t *cmdtp, nand_info_t *nand,
 			   ulong offset, ulong addr, char *cmd)
 {
@@ -778,7 +654,6 @@ U_BOOT_CMD(nboot, 4, 1, do_nandboot,
 	"nboot   - boot from NAND device\n",
 	"[partition] | [[[loadAddr] dev] offset]\n");
 
-#endif				/* if 0 */
 #endif				/* (CONFIG_CMD_NAND) */
 
 #else /* CFG_NAND_LEGACY */

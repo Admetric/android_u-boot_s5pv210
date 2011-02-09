@@ -1,8 +1,4 @@
 /*
- * (C) Copyright 2010
- * Samsung Electronics Co. Ltd
- * added fat format
- *
  * (C) Copyright 2002
  * Richard Jones, rjones@nexus-tech.net
  *
@@ -47,21 +43,12 @@ int do_fat_fsload (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	int dev=0;
 	int part=1;
 	char *ep;
-	struct mmc *mmc;
 
 	if (argc < 5) {
 		printf ("usage: fatload <interface> <dev[:part]> <addr> <filename> [bytes]\n");
 		return 1;
 	}
-
 	dev = (int)simple_strtoul (argv[2], &ep, 16);
-
-	mmc = find_mmc_device(dev);
-	if (mmc_init(mmc)) {
-		printf("MMC init is failed.\n");
-		return 1;
-	}
-
 	dev_desc=get_dev(argv[1],dev);
 	if (dev_desc==NULL) {
 		puts ("\n** Invalid boot device **\n");
@@ -178,17 +165,10 @@ int do_fat_fsinfo (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		}
 		part = (int)simple_strtoul(++ep, NULL, 16);
 	}
-
-	int i;
-	for (i = 1; i <= 4; i++) {
-		printf("-----Partition %d-----\n", i);
-		if (fat_register_device(dev_desc,i)!=0) {
-			printf ("** Unable to use %s %d:%d for fatinfo\
-			**\n",argv[1],dev,i);
-		}
-		printf("---------------------\n\n", i);
+	if (fat_register_device(dev_desc,part)!=0) {
+		printf ("\n** Unable to use %s %d:%d for fatinfo **\n",argv[1],dev,part);
+		return 1;
 	}
-
 	return (file_fat_detectfs ());
 }
 
@@ -197,48 +177,6 @@ U_BOOT_CMD(
 	"fatinfo - print information about filesystem\n",
 	"<interface> <dev[:part]>\n"
 	"    - print information about filesystem from 'dev' on 'interface'\n"
-);
-
-int do_fat_format (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
-{
-	int dev=0;
-	int part=1;
-	char *ep;
-	block_dev_desc_t *dev_desc=NULL;
-
-	if (argc < 2) {
-		printf ("usage: fatformt <interface> <dev[:part]>\n");
-		return (0);
-	}
-	dev = (int)simple_strtoul (argv[2], &ep, 16);
-	dev_desc=get_dev(argv[1],dev);
-	if (dev_desc==NULL) {
-		puts ("\n** Invalid boot device **\n");
-		return 1;
-	}
-	if (*ep) {
-		if (*ep != ':') {
-			puts ("\n** Invalid boot device, use `dev[:part]' **\n");
-			return 1;
-		}
-		part = (int)simple_strtoul(++ep, NULL, 16);
-		if (part > 4 || part < 1) {
-			puts ("** Partition Number shuld be 1 ~ 4 **\n");
-		}
-	}
-	printf("Start format MMC%d partition%d ....\n", dev, part);
-	if (fat_format_device(dev_desc, part) != 0) {
-		printf("Format failure!!!\n");
-	}
-
-	return 0;
-}
-
-U_BOOT_CMD(
-	fatformat,	3,	0,	do_fat_format,
-	"fatformat - disk format by FAT32\n",
-	"<interface(only support mmc)> <dev:partition num>\n"
-	"    - format by FAT32 on 'interface'\n"
 );
 
 #ifdef NOT_IMPLEMENTED_YET

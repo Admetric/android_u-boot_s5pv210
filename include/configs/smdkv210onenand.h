@@ -101,7 +101,7 @@
 /*
  * Size of malloc() pool
  */
-#define CFG_MALLOC_LEN		(CFG_ENV_SIZE + 896*1024)
+#define CFG_MALLOC_LEN		(CFG_ENV_SIZE + 1024*1024)
 #define CFG_GBL_DATA_SIZE	128	/* size in bytes reserved for initial data */
 
 #define CFG_STACK_SIZE		512*1024
@@ -126,7 +126,7 @@
  * select serial console configuration
  */
 
-#define CONFIG_SERIAL3          1
+#define CONFIG_SERIAL2          1	/* we use UART1 on SMDKC110 */
 
 #define CFG_HUSH_PARSER			/* use "hush" command parser	*/
 #ifdef CFG_HUSH_PARSER
@@ -165,8 +165,10 @@
 #define CONFIG_CMD_CACHE
 #define CONFIG_CMD_USB
 #define CONFIG_CMD_REGINFO
+
 //#define	CONFIG_CMD_NAND
 //#define	CONFIG_CMD_FLASH
+
 #ifndef FPGA_SMDKC110
 #define CONFIG_CMD_ONENAND
 #define CONFIG_CMD_MOVINAND
@@ -179,9 +181,6 @@
 #define CONFIG_CMD_ELF
 #define CONFIG_CMD_DHCP
 //#define CONFIG_CMD_I2C
-
-//#define CONFIG_CMD_EXT2
-#define CONFIG_CMD_FAT
 
 /*
  * BOOTP options
@@ -225,14 +224,18 @@
  * Miscellaneous configurable options
  */
 #define CFG_LONGHELP				/* undef to save memory		*/
+
 #define CFG_PROMPT              "SMDKV210 # "   /* Monitor Command Prompt       */
+
 #define CFG_CBSIZE		256		/* Console I/O Buffer Size	*/
 #define CFG_PBSIZE		384		/* Print Buffer Size */
 #define CFG_MAXARGS		16		/* max number of command args	*/
 #define CFG_BARGSIZE		CFG_CBSIZE	/* Boot Argument Buffer Size	*/
 
 #define CFG_MEMTEST_START	MEMORY_BASE_ADDRESS	/* memtest works on	*/
+
 #define CFG_MEMTEST_END		MEMORY_BASE_ADDRESS + 0x3E00000		/* 256 MB in DRAM	*/
+
 #undef CFG_CLKS_IN_HZ		/* everything, incl board info, in Hz */
 
 #define CFG_LOAD_ADDR		MEMORY_BASE_ADDRESS	/* default load address	*/
@@ -275,16 +278,14 @@
 	defined(CONFIG_CLK_800_100_166_133) || \
 	defined(CONFIG_CLK_400_200_166_133) || \
 	defined(CONFIG_CLK_400_100_166_133)
-#define APLL_MDIV       0x64
-#define APLL_PDIV       0x3
+#define APLL_MDIV       0xc8
+#define APLL_PDIV       0x6
 #define APLL_SDIV       0x1
 #elif defined(CONFIG_CLK_1000_200_166_133)
-#define APLL_MDIV       0x7d
-#define APLL_PDIV       0x3
+#define APLL_MDIV       0xfa
+#define APLL_PDIV       0x6
 #define APLL_SDIV       0x1
 #endif
-
-#define APLL_LOCKTIME_VAL	0x2cf
 
 #if defined(CONFIG_EVT1)
 /* Set AFC value */
@@ -443,12 +444,10 @@
 #define UART_UDIVSLOT_VAL	0xDDDD
 #endif
 
-#define CONFIG_NR_DRAM_BANKS	2          /* we have 2 bank of DRAM */
-#define SDRAM_BANK_SIZE		0x20000000    /* 512 MB */
+#define CONFIG_NR_DRAM_BANKS	1	   /* we have 2 bank of DRAM */
 #define PHYS_SDRAM_1		MEMORY_BASE_ADDRESS /* SDRAM Bank #1 */
-#define PHYS_SDRAM_1_SIZE	SDRAM_BANK_SIZE
-#define PHYS_SDRAM_2		(MEMORY_BASE_ADDRESS + SDRAM_BANK_SIZE) /* SDRAM Bank #2 */
-#define PHYS_SDRAM_2_SIZE	SDRAM_BANK_SIZE
+
+#define PHYS_SDRAM_1_SIZE	0x40000000 /* 1 GB */
 
 #define CFG_FLASH_BASE		0x80000000
 
@@ -528,7 +527,6 @@
 #define COPY_SDMMC_TO_MEM     (0xD003E008)
 
 /* SD/MMC configuration */
-#define CONFIG_MMC
 #define CONFIG_GENERIC_MMC
 #define CONFIG_S3C_HSMMC
 #undef DEBUG_S3C_HSMMC
@@ -545,7 +543,8 @@
 #undef	CONFIG_NO_SDMMC_DETECTION
 
 #define CONFIG_MTDPARTITION	"80000 400000 3000000"
-
+#define CONFIG_BOOTDELAY	3
+#define CONFIG_BOOTCOMMAND	"onenand read c0008000 600000 400000;onenand read c0a00000 B00000 180000;bootm c0008000 20a00000"
 /* OneNAND configuration */
 #define CFG_ONENAND_BASE 	(0xB0000000)
 #define CFG_MAX_ONENAND_DEVICE	1
@@ -567,26 +566,18 @@
 /* Fastboot variables */
 #define CFG_FASTBOOT_TRANSFER_BUFFER		(0x40000000)
 #define CFG_FASTBOOT_TRANSFER_BUFFER_SIZE	(0x8000000)   /* 128MB */
-#define CFG_FASTBOOT_ADDR_KERNEL		(0xC0008000)
-#define CFG_FASTBOOT_ADDR_RAMDISK		(0x30A00000)
-#define CFG_FASTBOOT_PAGESIZE			(2048)	// Page size of booting device
-#define CFG_FASTBOOT_SDMMC_BLOCKSIZE		(512)	// Block size of sdmmc
-
-/* Just one BSP type should be defined. */
-#define CFG_FASTBOOT_ONENANDBSP
-//#define CFG_FASTBOOT_NANDBSP
-//#define CFG_FASTBOOT_SDMMCBSP
+#define CFG_FASTBOOT_ADDR_KERNEL			(0xC0008000)
+#define CFG_FASTBOOT_ADDR_RAMDISK			(0x30A00000)
+//#define CFG_FASTBOOT_PREBOOT_KEYS			1
+//#define CFG_FASTBOOT_PREBOOT_KEY1			0x37 /* 'ok' */
+//#define CFG_FASTBOOT_PREBOOT_KEY2			0x00 /* unused */
+//#define CFG_FASTBOOT_PREBOOT_INITIAL_WAIT	(0)
+//#define CFG_FASTBOOT_PREBOOT_LOOP_MAXIMUM	(1)
+//#define CFG_FASTBOOT_PREBOOT_LOOP_WAIT	(0)
+#define CFG_FASTBOOT_FLASHCMD				do_onenand
 
 /* LCD setting */
 //#define CFG_LCD_TL2796		// for C110 - narrow LCD
 #define CFG_LCD_NONAME1			// for V210 - wide LCD
-#define CFG_LCD_FBUFFER				(0x48000000)
-
-#define CONFIG_BOOTDELAY	3
-#if defined(CFG_FASTBOOT_ONENANDBSP)
-#define CONFIG_BOOTCOMMAND	"onenand read C0008000 600000 400000; onenand read C0A00000 B00000 180000; bootm C0008000 20A00000"
-#elif defined(CFG_FASTBOOT_SDMMCBSP)
-#define CONFIG_BOOTCOMMAND	"movi read kernel C0008000; movi read rootfs C0A00000 180000; bootm C0008000 20A00000"
-#endif
 
 #endif	/* __CONFIG_H */

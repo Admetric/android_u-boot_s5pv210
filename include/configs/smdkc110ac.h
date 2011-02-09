@@ -41,9 +41,6 @@
 #define CONFIG_MCP_AC		1		/* OneDRAM + mDDR */
 #define CONFIG_EVT1		1		/* EVT1 */
 
-//#define CONFIG_FUSED		1		/* Fused chip */
-//#define CONFIG_SECURE		1		/* secure booting */
-
 #define BOOT_ONENAND		0x1
 #define BOOT_NAND		0x2
 #define BOOT_MMCSD		0x3
@@ -396,7 +393,7 @@
 #define DMC1_MEMCONFIG_0	0x40F81222
 #define DMC1_MEMCONFIG_1	0x50F81222
 #define DMC1_TIMINGA_REF	0x00000618
-#define DMC1_TIMING_ROW		0x18344309
+#define DMC1_TIMING_ROW		0x11344309
 #define DMC1_TIMING_DATA	0x12130005
 #define	DMC1_TIMING_PWR		0x0E190222
 #if defined(CONFIG_CLK_800_100_166_133) || defined(CONFIG_CLK_400_100_166_133) || defined(CONFIG_CLK_100_100_166_133)
@@ -411,7 +408,7 @@
 #define DMC1_MEMCONFIG_0	0x40F81222	// MemConfig0	512MB config, 8 banks,Mapping Method[12:15]0:linear, 1:linterleaved, 2:Mixed
 #define DMC1_MEMCONFIG_1	0x50F81222	// MemConfig1
 #define DMC1_TIMINGA_REF	0x0000030C	// TimingAref	7.8us*133MHz=1038(0x40E), 100MHz=780(0x30C), 20MHz=156(0x9C), 10MHz=78(0x4
-#define DMC1_TIMING_ROW		0x14344309	// TimingRow	for @200MHz
+#define DMC1_TIMING_ROW		0x11344309	// TimingRow	for @200MHz
 #define DMC1_TIMING_DATA	0x12130005	// TimingData	CL=3
 #define	DMC1_TIMING_PWR		0x0E190222	// TimingPower
 #endif

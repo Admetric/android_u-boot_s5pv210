@@ -72,8 +72,6 @@
 #include <jffs2/jffs2.h>
 #endif
 
-#define CFG_NAND_PAGES_IN_BLOCK		64
-
 /* Define default oob placement schemes for large and small page devices */
 static struct nand_ecclayout nand_oob_8 = {
 	.eccbytes = 3,
@@ -380,7 +378,7 @@ static int nand_block_bad(struct mtd_info *mtd, loff_t ofs, int getchip)
 		 defined(CONFIG_S5PC100)|| \
 		 defined(CONFIG_S5PC110)|| \
 		 defined(CONFIG_S5P6440))
-	if (page < CFG_NAND_PAGES_IN_BLOCK)
+	if ((mtd->writesize == 512 && page < 512) || (mtd->writesize == 2048 && page < 256))
 		return 0;
 #endif
 
@@ -1133,11 +1131,13 @@ static int nand_do_read_ops(struct mtd_info *mtd, loff_t from,
 		 defined(CONFIG_S5PC100)|| \
 		 defined(CONFIG_S5PC110)|| \
 		 defined(CONFIG_S5P6440))
-			if (page < CFG_NAND_PAGES_IN_BLOCK) {
+			if ((mtd->writesize == 512 && page < 512) || (mtd->writesize == 2048 && page < 256) ||
+				(mtd->writesize == 4096 && page < 128)) {
 				s3c_nand_read_page_8bit(mtd, chip, bufpoi);
 			} else
 #elif defined(CONFIG_NAND_BL1_8BIT_ECC) && defined(CONFIG_S3C6410)
-			if (page < CFG_NAND_PAGES_IN_BLOCK) {
+			if ((mtd->writesize == 512 && page < 512) || (mtd->writesize == 2048 && page < 128) ||
+				(mtd->writesize == 4096 && page < 128)) {
 				s3c_nand_read_page_8bit_for_irom(mtd, chip, bufpoi);
 			} else
 #endif
@@ -1685,12 +1685,14 @@ static int nand_write_page(struct mtd_info *mtd, struct nand_chip *chip,
 		 defined(CONFIG_S5PC100)|| \
 		 defined(CONFIG_S5PC110)|| \
 		 defined(CONFIG_S5P6440))
-	if (page < CFG_NAND_PAGES_IN_BLOCK) {
+	if ((mtd->writesize == 512 && page < 512) || (mtd->writesize == 2048 && page < 256) || 
+		(mtd->writesize == 4096 && page < 128)) {
 		memset(chip->oob_poi, 0xff, mtd->oobsize);
 		s3c_nand_write_page_8bit(mtd, chip, buf);
 	} else
 #elif defined(CONFIG_NAND_BL1_8BIT_ECC) && defined(CONFIG_S3C6410)
-	if (page < CFG_NAND_PAGES_IN_BLOCK) {
+	if ((mtd->writesize == 512 && page < 512) || (mtd->writesize == 2048 && page < 128) || 
+		(mtd->writesize == 4096 && page < 128)) {
 		memset(chip->oob_poi, 0xff, mtd->oobsize);
 		s3c_nand_write_page_8bit_for_irom(mtd, chip, buf);
 	} else

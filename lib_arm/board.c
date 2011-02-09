@@ -413,14 +413,6 @@ void start_armboot (void)
 //******************************//
 
 #if defined(CONFIG_SMDK6410)
-	#if defined(CONFIG_GENERIC_MMC)
-	puts ("SD/MMC:  ");
-	mmc_exist = mmc_initialize(gd->bd);
-	if (mmc_exist != 0)
-	{
-		puts ("0 MB\n");
-	}
-	#else
 	#if defined(CONFIG_MMC)
 	puts("SD/MMC:  ");
 
@@ -433,7 +425,16 @@ void start_armboot (void)
 	movi_init();
 	movi_set_ofs(MOVI_TOTAL_BLKCNT);
 	#endif
+
+	#if defined(CONFIG_GENERIC_MMC)
+	puts ("SD/MMC:  ");
+	mmc_exist = mmc_initialize(gd->bd);
+	if (mmc_exist != 0)
+	{
+		puts ("0 MB\n");	
+	}
 	#endif
+
 
 	if (INF_REG3_REG == BOOT_ONENAND) {
 	#if defined(CONFIG_CMD_ONENAND)
@@ -482,7 +483,7 @@ void start_armboot (void)
 		mmc_exist = mmc_initialize(gd->bd);
 		if (mmc_exist != 0)
 		{
-			puts ("0 MB\n");
+			puts ("0 MB\n");	
 		}
 	#endif
 
@@ -502,14 +503,6 @@ void start_armboot (void)
 #endif /* CONFIG_SMDKC110 */
 
 #if defined(CONFIG_SMDK6440)
-	#if defined(CONFIG_GENERIC_MMC)
-	puts ("SD/MMC:  ");
-	mmc_exist = mmc_initialize(gd->bd);
-	if (mmc_exist != 0)
-	{
-		puts ("0 MB\n");
-	}
-	#else
 	#if defined(CONFIG_MMC)
 	if (INF_REG3_REG == 1) {	/* eMMC_4.3 */
 		puts("eMMC:    ");
@@ -534,6 +527,14 @@ void start_armboot (void)
 
 	}
 	#endif
+
+	#if defined(CONFIG_GENERIC_MMC)
+	puts ("SD/MMC:  ");
+	mmc_exist = mmc_initialize(gd->bd);
+	if (mmc_exist != 0)
+	{
+		puts ("0 MB\n");	
+	}
 	#endif
 
 	if (INF_REG3_REG == 2) {
@@ -546,14 +547,6 @@ void start_armboot (void)
 #endif /* CONFIG_SMDK6440 */
 
 #if defined(CONFIG_SMDK6430)
-	#if defined(CONFIG_GENERIC_MMC)
-	puts ("SD/MMC:  ");
-	mmc_exist = mmc_initialize(gd->bd);
-	if (mmc_exist != 0)
-	{
-		puts ("0 MB\n");
-	}
-	#else
 	#if defined(CONFIG_MMC)
 	puts("SD/MMC:  ");
 
@@ -565,7 +558,16 @@ void start_armboot (void)
 	movi_set_capacity();
 	movi_init();
 	movi_set_ofs(MOVI_TOTAL_BLKCNT);
+
 	#endif
+
+	#if defined(CONFIG_GENERIC_MMC)
+	puts ("SD/MMC:  ");
+	mmc_exist = mmc_initialize(gd->bd);
+	if (mmc_exist != 0)
+	{
+		puts ("0 MB\n");	
+	}
 	#endif
 
 	if (INF_REG3_REG == BOOT_ONENAND) {
@@ -587,14 +589,7 @@ void start_armboot (void)
 #endif	/* CONFIG_SMDK6430 */
 
 #if defined(CONFIG_SMDK6442)
-	#if defined(CONFIG_GENERIC_MMC)
-	puts ("SD/MMC:  ");
-	mmc_exist = mmc_initialize(gd->bd);
-	if (mmc_exist != 0)
-	{
-		puts ("0 MB\n");
-	}
-	#else
+
 	#if defined(CONFIG_MMC)
 	puts("SD/MMC:  ");
 
@@ -603,6 +598,14 @@ void start_armboot (void)
 	movi_set_ofs(MOVI_TOTAL_BLKCNT);
 	
 	#endif
+
+	#if defined(CONFIG_GENERIC_MMC)
+	puts ("SD/MMC:  ");
+	mmc_exist = mmc_initialize(gd->bd);
+	if (mmc_exist != 0)
+	{
+		puts ("0 MB\n");	
+	}
 	#endif
 
 	#if defined(CONFIG_CMD_ONENAND)

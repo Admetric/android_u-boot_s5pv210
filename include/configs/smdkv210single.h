@@ -42,14 +42,7 @@
 #define CONFIG_MCP_SINGLE	1
 #define CONFIG_EVT1		1		/* EVT1 */
 
-#define CONFIG_FASTBOOT		1
-//#define CONFIG_FUSED		1		/* Fused chip */
-//#define CONFIG_SECURE		1		/* secure booting */
-
-#define CONFIG_SW_WORKAROUND	1		/* Software around */
-#if defined(CONFIG_SW_WORKAROUND)
-#define CONFIG_CHECK_MPLL_LOCK	1		/* Check MPLL is locked */
-#endif
+#undef CONFIG_FASTBOOT
 
 #define BOOT_ONENAND		0x1
 #define BOOT_NAND		0x2
@@ -108,7 +101,7 @@
 /*
  * Size of malloc() pool
  */
-#define CFG_MALLOC_LEN		(CFG_ENV_SIZE + 896*1024)
+#define CFG_MALLOC_LEN		(CFG_ENV_SIZE + 1024*1024)
 #define CFG_GBL_DATA_SIZE	128	/* size in bytes reserved for initial data */
 
 #define CFG_STACK_SIZE		512*1024
@@ -121,19 +114,19 @@
 #define CONFIG_DRIVER_DM9000	1
 
 #ifdef CONFIG_DRIVER_DM9000
-#define CONFIG_DM9000_BASE		(0xA8000000)
+#define CONFIG_DM9000_BASE		(0x88000000)
 #define DM9000_IO			(CONFIG_DM9000_BASE)
 #if defined(DM9000_16BIT_DATA)
-#define DM9000_DATA			(CONFIG_DM9000_BASE+2)
+#define DM9000_DATA			(CONFIG_DM9000_BASE+8)
 #else
-#define DM9000_DATA			(CONFIG_DM9000_BASE+1)
+#define DM9000_DATA			(CONFIG_DM9000_BASE+4)
 #endif
 #endif
 /*
  * select serial console configuration
  */
 
-#define CONFIG_SERIAL3          1	/* we use UART1 on SMDKC110 */
+#define CONFIG_SERIAL1          1	/* we use UART0 on MXM-V210 */
 
 #define CFG_HUSH_PARSER			/* use "hush" command parser	*/
 #ifdef CFG_HUSH_PARSER
@@ -189,9 +182,6 @@
 #define CONFIG_CMD_DHCP
 //#define CONFIG_CMD_I2C
 
-#define CONFIG_CMD_EXT2
-#define CONFIG_CMD_FAT
-
 /*
  * BOOTP options
  */
@@ -201,11 +191,13 @@
 #define CONFIG_BOOTP_BOOTPATH
 
 /*#define CONFIG_BOOTARGS    	"root=ramfs devfs=mount console=ttySA0,9600" */
+#define CONFIG_BOOTCOMMAND      "nand read c0008000 80000 380000;bootm c0008000"
+#define CONFIG_BOOTARGS         "root=b301 console=ttySAC0,115200 debug"
 #define CONFIG_ETHADDR		00:40:5c:26:0a:5b
 #define CONFIG_NETMASK          255.255.255.0
-#define CONFIG_IPADDR		192.168.0.20
-#define CONFIG_SERVERIP		192.168.0.10
-#define CONFIG_GATEWAYIP	192.168.0.1
+#define CONFIG_IPADDR		192.168.1.210
+#define CONFIG_SERVERIP		192.168.1.10
+#define CONFIG_GATEWAYIP	192.168.1.254
 
 #define CONFIG_ZERO_BOOTDELAY_CHECK
 
@@ -270,9 +262,9 @@
 
 //#define CONFIG_CLK_667_166_166_133
 //#define CONFIG_CLK_533_133_100_100
-#define CONFIG_CLK_800_200_166_133
+//#define CONFIG_CLK_800_200_166_133
 //#define CONFIG_CLK_800_100_166_133
-//#define CONFIG_CLK_1000_200_166_133
+#define CONFIG_CLK_1000_200_166_133
 //#define CONFIG_CLK_400_200_166_133
 //#define CONFIG_CLK_400_100_166_133
 
@@ -288,16 +280,14 @@
 	defined(CONFIG_CLK_800_100_166_133) || \
 	defined(CONFIG_CLK_400_200_166_133) || \
 	defined(CONFIG_CLK_400_100_166_133)
-#define APLL_MDIV       0x64
-#define APLL_PDIV       0x3
+#define APLL_MDIV       0xc8
+#define APLL_PDIV       0x6
 #define APLL_SDIV       0x1
 #elif defined(CONFIG_CLK_1000_200_166_133)
-#define APLL_MDIV       0x7d
-#define APLL_PDIV       0x3
+#define APLL_MDIV       0xfa
+#define APLL_PDIV       0x6
 #define APLL_SDIV       0x1
 #endif
-
-#define APLL_LOCKTIME_VAL	0x2cf
 
 #if defined(CONFIG_EVT1)
 /* Set AFC value */
@@ -397,18 +387,18 @@
 #if defined(CONFIG_MCP_SINGLE)
 
 #define DMC0_MEMCONFIG_0	0x20E01323	// MemConfig0	256MB config, 8 banks,Mapping Method[12:15]0:linear, 1:linterleaved, 2:Mixed
-#define DMC0_MEMCONFIG_1	0x40F01323	// MemConfig1
+#define DMC0_MEMCONFIG_1	0x00E01323	// MemConfig1
 #define DMC0_TIMINGA_REF	0x00000618	// TimingAref	7.8us*133MHz=1038(0x40E), 100MHz=780(0x30C), 20MHz=156(0x9C), 10MHz=78(0x4E)
-#define DMC0_TIMING_ROW		0x28233287	// TimingRow	for @200MHz
-#define DMC0_TIMING_DATA	0x23240304	// TimingData	CL=3
-#define	DMC0_TIMING_PWR		0x09C80232	// TimingPower
+#define DMC0_TIMING_ROW		0x28233289	// TimingRow	for @200MHz
+#define DMC0_TIMING_DATA	0x23230304	// TimingData	CL=3
+#define	DMC0_TIMING_PWR		0x08280232	// TimingPower
 
 #define	DMC1_MEMCONTROL		0x00202400	// MemControl	BL=4, 2 chip, DDR2 type, dynamic self refresh, force precharge, dynamic power down off
-#define DMC1_MEMCONFIG_0	0x40C01323	// MemConfig0	512MB config, 8 banks,Mapping Method[12:15]0:linear, 1:linterleaved, 2:Mixed
+#define DMC1_MEMCONFIG_0	0x40E01323	// MemConfig0	512MB config, 8 banks,Mapping Method[12:15]0:linear, 1:linterleaved, 2:Mixed
 #define DMC1_MEMCONFIG_1	0x00E01323	// MemConfig1
 #define DMC1_TIMINGA_REF	0x00000618	// TimingAref	7.8us*133MHz=1038(0x40E), 100MHz=780(0x30C), 20MHz=156(0x9C), 10MHz=78(0x4
 #define DMC1_TIMING_ROW		0x28233289	// TimingRow	for @200MHz
-#define DMC1_TIMING_DATA	0x23240304	// TimingData	CL=3
+#define DMC1_TIMING_DATA	0x23230304	// TimingData	CL=3
 #define	DMC1_TIMING_PWR		0x08280232	// TimingPower
 #if defined(CONFIG_CLK_800_100_166_133) || defined(CONFIG_CLK_400_100_166_133)
 #define DMC0_MEMCONFIG_0	0x20E01323	// MemConfig0	256MB config, 8 banks,Mapping Method[12:15]0:linear, 1:linterleaved, 2:Mixed
@@ -456,12 +446,12 @@
 #define UART_UDIVSLOT_VAL	0xDDDD
 #endif
 
-#define CONFIG_NR_DRAM_BANKS    2          /* we have 2 bank of DRAM */
-#define SDRAM_BANK_SIZE         0x20000000    /* 512 MB */
-#define PHYS_SDRAM_1            MEMORY_BASE_ADDRESS /* SDRAM Bank #1 */
-#define PHYS_SDRAM_1_SIZE       SDRAM_BANK_SIZE
-#define PHYS_SDRAM_2            (MEMORY_BASE_ADDRESS + SDRAM_BANK_SIZE) /* SDRAM Bank #2 */
-#define PHYS_SDRAM_2_SIZE       SDRAM_BANK_SIZE
+#define CONFIG_NR_DRAM_BANKS	2	   /* we have 2 bank of DRAM */
+#define PHYS_SDRAM_1		MEMORY_BASE_ADDRESS /* SDRAM Bank #1 */
+#define	PHYS_SDRAM_2		MEMORY_BASE_ADDRESS+PHYS_SDRAM_1_SIZE
+
+#define PHYS_SDRAM_1_SIZE	0x20000000 /* 512MB */
+#define	PHYS_SDRAM_2_SIZE	0x20000000 /* 512MB */
 
 #define CFG_FLASH_BASE		0x80000000
 
@@ -471,7 +461,7 @@
 #define CONFIG_MX_LV640EB		/* MX29LV640EB */
 //#define CONFIG_AMD_LV800		/* AM29LV800BB */
 
-#define CFG_MAX_FLASH_BANKS	1	/* max number of memory banks */
+#define CFG_MAX_FLASH_BANKS	0	/* max number of memory banks */
 
 #if	defined(CONFIG_MX_LV640EB)
 #define CFG_MAX_FLASH_SECT	135
@@ -541,7 +531,6 @@
 #define COPY_SDMMC_TO_MEM     (0xD003E008)
 
 /* SD/MMC configuration */
-#define CONFIG_MMC
 #define CONFIG_GENERIC_MMC
 #define CONFIG_S3C_HSMMC
 #undef DEBUG_S3C_HSMMC
@@ -558,7 +547,8 @@
 #undef	CONFIG_NO_SDMMC_DETECTION
 
 #define CONFIG_MTDPARTITION	"80000 400000 3000000"
-
+#define CONFIG_BOOTDELAY	3
+//#define CONFIG_BOOTCOMMAND	"nand read c0008000 600000 400000; nand read 30A00000 B00000 180000; bootm c0008000 30A00000"
 /* OneNAND configuration */
 #define CFG_ONENAND_BASE 	(0xB0000000)
 #define CFG_MAX_ONENAND_DEVICE	1
@@ -579,26 +569,18 @@
 /* Fastboot variables */
 #define CFG_FASTBOOT_TRANSFER_BUFFER		(0x40000000)
 #define CFG_FASTBOOT_TRANSFER_BUFFER_SIZE	(0x8000000)   /* 128MB */
-#define CFG_FASTBOOT_ADDR_KERNEL		(0xC0008000)
-#define CFG_FASTBOOT_ADDR_RAMDISK		(0x30A00000)
-#define CFG_FASTBOOT_PAGESIZE			(2048)	// Page size of booting device
-#define CFG_FASTBOOT_SDMMC_BLOCKSIZE		(512)	// Block size of sdmmc
-
-/* Just one BSP type should be defined. */
-//#define CFG_FASTBOOT_ONENANDBSP
-#define CFG_FASTBOOT_NANDBSP
-//#define CFG_FASTBOOT_SDMMCBSP
+#define CFG_FASTBOOT_ADDR_KERNEL			(0xC0008000)
+#define CFG_FASTBOOT_ADDR_RAMDISK			(0x30A00000)
+//#define CFG_FASTBOOT_PREBOOT_KEYS			1
+//#define CFG_FASTBOOT_PREBOOT_KEY1			0x37 /* 'ok' */
+//#define CFG_FASTBOOT_PREBOOT_KEY2			0x00 /* unused */
+//#define CFG_FASTBOOT_PREBOOT_INITIAL_WAIT	(0)
+//#define CFG_FASTBOOT_PREBOOT_LOOP_MAXIMUM	(1)
+//#define CFG_FASTBOOT_PREBOOT_LOOP_WAIT	(0)
+#define CFG_FASTBOOT_FLASHCMD				do_nand
 
 /* LCD setting */
 //#define CFG_LCD_TL2796		// for C110 - narrow LCD
 #define CFG_LCD_NONAME1			// for V210 - wide LCD
-#define CFG_LCD_FBUFFER				(0x48000000)
-
-#define CONFIG_BOOTDELAY	3
-#if defined(CFG_FASTBOOT_NANDBSP)
-#define CONFIG_BOOTCOMMAND	"nand read C0008000 600000 400000; nand read 30A00000 B00000 180000; bootm C0008000 30A00000"
-#elif defined(CFG_FASTBOOT_SDMMCBSP)
-#define CONFIG_BOOTCOMMAND	"movi read kernel C0008000; movi read rootfs 30A00000 180000; bootm C0008000 30A00000"
-#endif
 
 #endif	/* __CONFIG_H */
