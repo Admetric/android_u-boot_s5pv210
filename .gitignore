@@ -21,6 +21,7 @@
 /u-boot
 /u-boot.hex
 /u-boot.map
+/u-boot.dis
 /u-boot.bin
 /u-boot.srec
 /u-boot.ldr
