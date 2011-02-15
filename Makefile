@@ -262,7 +262,8 @@ PLATFORM_LIBS += -L $(shell dirname `$(CC) $(CFLAGS) -print-libgcc-file-name`) -
 # Don't include stuff already done in $(LIBS)
 SUBDIRS	= tools \
 	  examples \
-	  api_examples
+	  api_examples \
+		sd_fusing
 
 .PHONY : $(SUBDIRS)
 

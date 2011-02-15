@@ -1,4 +1,5 @@
 .SUFFIXES : .c .o
+.PHONY: all _depend dep clean new 
 
 CC		= gcc
 ASM		=
@@ -24,6 +25,7 @@ LIBS =
 #---------------------------------------------------------------------------------------
 SOURCES = $(OBJECTS:.o=.c)
 
+
 all:
 	$(CC) $(CFLAGS)	mkbl1 C110-EVT1-mkbl1.c 
 	$(CC) $(CFLAGS)	sd_fdisk sd_fdisk.c
@@ -31,6 +33,8 @@ all:
 #---------------------------------------------------------------------------------------
 .c.o:
 		$(CC) $(CFLAGS) -c $< -o $@
+
+_depend:  
 
 dep:
 		gccmakedep	$(SOURCES)
