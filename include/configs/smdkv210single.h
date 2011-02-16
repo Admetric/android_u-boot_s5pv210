@@ -42,7 +42,18 @@
 #define CONFIG_MCP_SINGLE	1
 #define CONFIG_EVT1		1		/* EVT1 */
 
-#undef CONFIG_FASTBOOT
+//#undef CONFIG_FASTBOOT
+#define CONFIG_FASTBOOT 1
+//#define CONFIG_FUSED		1		/* Fused chip */
+//#define CONFIG_SECURE_BOOT	1		/* secure booting */
+
+#if defined(CONFIG_SECURE_BOOT)
+#define CONFIG_SECURE_KERNEL_BASE	0x20008000
+#define CONFIG_SECURE_KERNEL_SIZE	0x00271000
+#define CONFIG_SECURE_ROOTFS_BASE	0x30A00000
+#define CONFIG_SECURE_ROOTFS_SIZE	0x0013D000
+#endif
+
 
 #define BOOT_ONENAND		0x1
 #define BOOT_NAND		0x2
@@ -168,6 +179,9 @@
 
 #define	CONFIG_CMD_NAND
 #define	CONFIG_CMD_FLASH
+#define CONFIG_CMD_EXT2
+#define CONFIG_CMD_FAT
+
 
 #ifndef FPGA_SMDKC110
 //#define CONFIG_CMD_ONENAND
@@ -191,7 +205,7 @@
 #define CONFIG_BOOTP_BOOTPATH
 
 /*#define CONFIG_BOOTARGS    	"root=ramfs devfs=mount console=ttySA0,9600" */
-#define CONFIG_BOOTCOMMAND      "nand read c0008000 80000 380000;bootm c0008000"
+//#define CONFIG_BOOTCOMMAND      "nand read c0008000 80000 380000;bootm c0008000"
 #define CONFIG_BOOTARGS         "root=b301 console=ttySAC0,115200 debug"
 #define CONFIG_ETHADDR		00:40:5c:26:0a:5b
 #define CONFIG_NETMASK          255.255.255.0
@@ -571,6 +585,8 @@
 #define CFG_FASTBOOT_TRANSFER_BUFFER_SIZE	(0x8000000)   /* 128MB */
 #define CFG_FASTBOOT_ADDR_KERNEL			(0xC0008000)
 #define CFG_FASTBOOT_ADDR_RAMDISK			(0x30A00000)
+#define CFG_FASTBOOT_PAGESIZE			    (2048)
+#define CFG_FASTBOOT_SDMMC_BLOCKSIZE		(512)	// Block size of sdmmc
 //#define CFG_FASTBOOT_PREBOOT_KEYS			1
 //#define CFG_FASTBOOT_PREBOOT_KEY1			0x37 /* 'ok' */
 //#define CFG_FASTBOOT_PREBOOT_KEY2			0x00 /* unused */
@@ -579,7 +595,25 @@
 //#define CFG_FASTBOOT_PREBOOT_LOOP_WAIT	(0)
 #define CFG_FASTBOOT_FLASHCMD				do_nand
 
+/* Just one BSP type should be defined. */
+//#define CFG_FASTBOOT_ONENANDBSP
+#define CFG_FASTBOOT_NANDBSP
+//#define CFG_FASTBOOT_SDMMCBSP
+
 /* LCD setting */
+//#define CFG_LCD_TL2796		// for C110 - narrow LCD
+#define CFG_LCD_NONAME1			// for V210 - wide LCD
+#define CFG_LCD_FBUFFER				(0x48000000)
+
+#define CONFIG_BOOTDELAY	3
+#if defined(CFG_FASTBOOT_NANDBSP)
+#define CONFIG_BOOTCOMMAND	"nand read C0008000 600000 400000; nand read 30A00000 B00000 180000; bootm C0008000 30A00000"
+#elif defined(CFG_FASTBOOT_SDMMCBSP)
+#define CONFIG_BOOTCOMMAND	"movi read kernel C0008000; movi read rootfs 30A00000 180000; bootm C0008000 30A00000"
+#endif
+
+/* LCD setting */
+#define CFG_LCD_FBUFFER			(0x48000000)
 //#define CFG_LCD_TL2796		// for C110 - narrow LCD
 #define CFG_LCD_NONAME1			// for V210 - wide LCD
 

@@ -202,6 +202,12 @@ struct fastboot_ptentry
    using the setenv and saveenv commands */
 #define FASTBOOT_PTENTRY_FLAGS_WRITE_ENV              0x00000400
 
+/* Use mmc command to read/write this partition */
+#define FASTBOOT_PTENTRY_FLAGS_USE_MMC_CMD            0x00010000
+
+/* Use movi command to read/write this partition */
+#define FASTBOOT_PTENTRY_FLAGS_USE_MOVI_CMD           0x00020000
+
 /* Status values */
 #define FASTBOOT_OK			0
 #define FASTBOOT_ERROR			-1
