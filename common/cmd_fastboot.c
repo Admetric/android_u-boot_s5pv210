@@ -1622,7 +1622,7 @@ static int update_from_sd (char *part, char *file)
 		LCD_setprogress(100);
 		dev_desc = get_dev("mmc", CFG_FASTBOOT_SDFUSE_MMCDEV);
 		if (dev_desc == NULL) {
-			printf ("** Invalid boot device **\n");
+			printf ("** Invalid boot device (update from sd) **\n");
 			return 1;
 		}
 		if (fat_register_device(dev_desc, CFG_FASTBOOT_SDFUSE_MMCPART) != 0) {

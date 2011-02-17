@@ -40,11 +40,11 @@
 #define CONFIG_SMDKC110		1
 
 #define CONFIG_MCP_SINGLE	1
-#define CONFIG_EVT1		1		/* EVT1 */
+#define CONFIG_EVT1		    1		/* EVT1 */
 
 //#undef CONFIG_FASTBOOT
-#define CONFIG_FASTBOOT 1
-//#define CONFIG_FUSED		1		/* Fused chip */
+#define CONFIG_FASTBOOT       1
+//#define CONFIG_FUSED		    1		/* Fused chip */
 //#define CONFIG_SECURE_BOOT	1		/* secure booting */
 
 #if defined(CONFIG_SECURE_BOOT)
@@ -55,11 +55,11 @@
 #endif
 
 
-#define BOOT_ONENAND		0x1
-#define BOOT_NAND		0x2
+#define BOOT_ONENAND	0x1
+#define BOOT_NAND		  0x2
 #define BOOT_MMCSD		0x3
-#define BOOT_NOR		0x4
-#define BOOT_SEC_DEV		0x5
+#define BOOT_NOR		  0x4
+#define BOOT_SEC_DEV  0x5
 
 /* skip to load BL2 */
 //#define FAST_BOOT		1
@@ -126,11 +126,11 @@
 
 #ifdef CONFIG_DRIVER_DM9000
 #define CONFIG_DM9000_BASE		(0x88000000)
-#define DM9000_IO			(CONFIG_DM9000_BASE)
+#define DM9000_IO			        (CONFIG_DM9000_BASE)
 #if defined(DM9000_16BIT_DATA)
-#define DM9000_DATA			(CONFIG_DM9000_BASE+8)
+#define DM9000_DATA			      (CONFIG_DM9000_BASE+8)
 #else
-#define DM9000_DATA			(CONFIG_DM9000_BASE+4)
+#define DM9000_DATA			      (CONFIG_DM9000_BASE+4)
 #endif
 #endif
 /*
@@ -139,7 +139,7 @@
 
 #define CONFIG_SERIAL1          1	/* we use UART0 on MXM-V210 */
 
-#define CFG_HUSH_PARSER			/* use "hush" command parser	*/
+#define CFG_HUSH_PARSER			      /* use "hush" command parser	*/
 #ifdef CFG_HUSH_PARSER
 #define CFG_PROMPT_HUSH_PS2	"> "
 #endif
@@ -149,8 +149,8 @@
 #undef CONFIG_S3C64XX_I2C		/* this board has H/W I2C */
 #ifdef CONFIG_S3C64XX_I2C
 #define CONFIG_HARD_I2C		1
-#define CFG_I2C_SPEED		50000
-#define CFG_I2C_SLAVE		0xFE
+#define CFG_I2C_SPEED		  50000
+#define CFG_I2C_SLAVE		  0xFE
 #endif
 
 #define CONFIG_DOS_PARTITION
@@ -181,7 +181,6 @@
 #define	CONFIG_CMD_FLASH
 #define CONFIG_CMD_EXT2
 #define CONFIG_CMD_FAT
-
 
 #ifndef FPGA_SMDKC110
 //#define CONFIG_CMD_ONENAND
@@ -479,13 +478,13 @@
 
 #if	defined(CONFIG_MX_LV640EB)
 #define CFG_MAX_FLASH_SECT	135
-#define PHYS_FLASH_SIZE		0x800000	/* 8MB */
+#define PHYS_FLASH_SIZE		  0x800000	/* 8MB */
 #elif	defined(CONFIG_AMD_LV800)
 #define CFG_MAX_FLASH_SECT	19
-#define PHYS_FLASH_SIZE		0x100000	/* 1MB */
+#define PHYS_FLASH_SIZE		  0x100000	/* 1MB */
 #else
 #define CFG_MAX_FLASH_SECT	512
-#define PHYS_FLASH_SIZE		0x100000	/* 1MB */
+#define PHYS_FLASH_SIZE		  0x100000	/* 1MB */
 #endif
 
 #define CFG_FLASH_LEGACY_512Kx16
@@ -545,6 +544,7 @@
 #define COPY_SDMMC_TO_MEM     (0xD003E008)
 
 /* SD/MMC configuration */
+#define CONFIG_MMC
 #define CONFIG_GENERIC_MMC
 #define CONFIG_S3C_HSMMC
 #undef DEBUG_S3C_HSMMC
@@ -581,19 +581,19 @@
 #define CFG_ENV_IS_IN_AUTO
 
 /* Fastboot variables */
-#define CFG_FASTBOOT_TRANSFER_BUFFER		(0x40000000)
+#define CFG_FASTBOOT_TRANSFER_BUFFER		  (0x40000000)
 #define CFG_FASTBOOT_TRANSFER_BUFFER_SIZE	(0x8000000)   /* 128MB */
-#define CFG_FASTBOOT_ADDR_KERNEL			(0xC0008000)
-#define CFG_FASTBOOT_ADDR_RAMDISK			(0x30A00000)
-#define CFG_FASTBOOT_PAGESIZE			    (2048)
-#define CFG_FASTBOOT_SDMMC_BLOCKSIZE		(512)	// Block size of sdmmc
+#define CFG_FASTBOOT_ADDR_KERNEL			    (0xC0008000)
+#define CFG_FASTBOOT_ADDR_RAMDISK			    (0x30A00000)
+#define CFG_FASTBOOT_PAGESIZE			        (2048)
+#define CFG_FASTBOOT_SDMMC_BLOCKSIZE		  (512)	        /* Block size of sdmmc */
 //#define CFG_FASTBOOT_PREBOOT_KEYS			1
 //#define CFG_FASTBOOT_PREBOOT_KEY1			0x37 /* 'ok' */
 //#define CFG_FASTBOOT_PREBOOT_KEY2			0x00 /* unused */
 //#define CFG_FASTBOOT_PREBOOT_INITIAL_WAIT	(0)
 //#define CFG_FASTBOOT_PREBOOT_LOOP_MAXIMUM	(1)
-//#define CFG_FASTBOOT_PREBOOT_LOOP_WAIT	(0)
-#define CFG_FASTBOOT_FLASHCMD				do_nand
+//#define CFG_FASTBOOT_PREBOOT_LOOP_WAIT	  (0)
+#define CFG_FASTBOOT_FLASHCMD				      do_nand
 
 /* Just one BSP type should be defined. */
 //#define CFG_FASTBOOT_ONENANDBSP
@@ -603,7 +603,7 @@
 /* LCD setting */
 //#define CFG_LCD_TL2796		// for C110 - narrow LCD
 #define CFG_LCD_NONAME1			// for V210 - wide LCD
-#define CFG_LCD_FBUFFER				(0x48000000)
+#define CFG_LCD_FBUFFER			(0x48000000)
 
 #define CONFIG_BOOTDELAY	3
 #if defined(CFG_FASTBOOT_NANDBSP)
@@ -611,10 +611,5 @@
 #elif defined(CFG_FASTBOOT_SDMMCBSP)
 #define CONFIG_BOOTCOMMAND	"movi read kernel C0008000; movi read rootfs 30A00000 180000; bootm C0008000 30A00000"
 #endif
-
-/* LCD setting */
-#define CFG_LCD_FBUFFER			(0x48000000)
-//#define CFG_LCD_TL2796		// for C110 - narrow LCD
-#define CFG_LCD_NONAME1			// for V210 - wide LCD
 
 #endif	/* __CONFIG_H */
