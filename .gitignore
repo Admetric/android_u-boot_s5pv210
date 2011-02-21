@@ -64,3 +64,6 @@ cscope.*
 # sd_fusing
 sd_fusing/mkbl1
 sd_fusing/sd_fdisk
+
+/board/samsung/smdkc110/config.mk
+/include/regs.h
