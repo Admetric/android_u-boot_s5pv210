@@ -94,7 +94,7 @@ unsigned int ptable_default_size = sizeof(ptable_default);
 #define A_SESSION_VALID		(0x1<<18)
 
 
-#define VENDOR_ID 	0x18D1 
+#define VENDOR_ID 	0x18D1
 #define PRODUCT_ID	0x0002
 #define FB_PKT_SZ	64 // full-speed mode
 #define OK	0
@@ -178,7 +178,7 @@ static struct cmd_fastboot_interface *fastboot_interface = NULL;
    Set to maximum of 512 */
 
 /* Note: The start address must be double word aligned */
-static u8 fastboot_bulk_fifo[0x0200+1]; //__attribute__ ((aligned(0x4))); 
+static u8 fastboot_bulk_fifo[0x0200+1]; //__attribute__ ((aligned(0x4)));
 const char* reply_msg;
 unsigned int transfer_size;
 u32 fboot_response_flag=0;
@@ -1704,7 +1704,7 @@ void fboot_usb_int_bulkin(void)
 		/*ep3 enable, clear nak, bulk, usb active, next ep3, max pkt 64*/
 		writel(1u<<31|1<<26|2<<18|1<<15|fboot_otg.bulkin_max_pktsize<<0, S5P_OTG_DIEPCTL_IN);
 
-		fboot_usb_write_in_fifo(reply_msg,strlen(reply_msg)); 
+		fboot_usb_write_in_fifo(reply_msg,strlen(reply_msg));
 
 		fboot_response_flag=0;
 	}
@@ -1749,7 +1749,7 @@ void fboot_usb_int_bulkin(void)
 	} else { /*remain_cnt = 0*/
 		writel((DEPCTL_SNAK|DEPCTL_BULK_TYPE), S5P_OTG_DIEPCTL_IN);
 	}
-	
+
 #endif
 }
 
@@ -1905,7 +1905,7 @@ void fboot_usb_download_continue(u32 fifo_cnt_byte)
 		if (((u32)fboot_otg.dn_ptr - fboot_otg.dn_addr) >= (fboot_otg.dn_filesize - 8)) {
 			printf("Download Done!! Download Address: 0x%x, Download Filesize:0x%x\n",
 				fboot_otg.dn_addr, (fboot_otg.dn_filesize-10));
-				
+
 			fboot_usbd_dn_cnt 	= fboot_otg.dn_filesize-10;
 			fboot_usbd_dn_addr	= fboot_otg.dn_addr;
 
@@ -1953,14 +1953,14 @@ void fboot_usb_int_bulkout(u32 fifo_cnt_byte)
 	if (fastboot_interface && fastboot_interface->rx_handler) {
 		/* Call rx_handler at common/cmd_fastboot.c */
 		if (!fastboot_interface->rx_handler(&fastboot_bulk_fifo[0], fifo_cnt_byte))
-			;//OK 
+			;//OK
 	}
 
 	/* Since the buffer is not null terminated,
 	 * poison the buffer */
 	//memset(&fastboot_bulk_fifo[0], 0, fifo_size);
 	//memset(&fastboot_bulk_fifo[0], 0, fastboot_fifo_size);
-		
+
 	/*ep1 enable, clear nak, bulk, usb active, max pkt 64*/
 	//writel(1u<<31|1<<26|2<<18|1<<15|fboot_otg.bulkin_max_pktsize<<0, S5P_OTG_DIEPCTL_IN);
 #else
@@ -2547,24 +2547,24 @@ int fastboot_preboot(void)
 	}
 
 	/* Test code */
-	writel(0xF, 0xE1600000);
-	writel(readl(0xE1600010) | 0x1, 0xE1600010);
+	//writel(0xF, 0xE1600000);
+	//writel(readl(0xE1600010) | 0x1, 0xE1600010);
 
-	writel(0x33333333, 0xE0200C40);
-	writel(0x0, 0xE0200C48);
-	writel(0x33333333, 0xE0200C60);
-	writel(0xAAAA, 0xE0200C68);
+	//writel(0x33333333, 0xE0200C40);
+	//writel(0x0, 0xE0200C48);
+	//writel(0x33333333, 0xE0200C60);
+	//writel(0xAAAA, 0xE0200C68);
 
-	writel(readl(0xE1600008) & ~0xffff, 0xE1600008);
+	//writel(readl(0xE1600008) & ~0xffff, 0xE1600008);
 
 	/* It seems that we require a little time before reading keypad */
-	printf("checking mode for fastboot ...\n");
+	//printf("checking mode for fastboot ...\n");
 
 	//if (!(readl(0xE160000C) & 0x82))
-	if (!(readl(0xE160000C) & 0x80))
-	{
-		return 1;
-	}
+	//if (!(readl(0xE160000C) & 0x80))
+	//{
+	//	return 1;
+	//}
 
 	return 0;
 }
