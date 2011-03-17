@@ -1718,7 +1718,7 @@ int do_sdfuse (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
   {
     LCD_turnon();
 
-    if (update_from_sd("u-boot.bin", "bootloader"))
+    if (update_from_sd("bootloader", "u-boot.bin"))
       goto err_sdfuse;
     if (update_from_sd("kernel", NULL))
       goto err_sdfuse;
