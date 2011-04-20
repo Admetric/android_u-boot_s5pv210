@@ -7,19 +7,19 @@ mem_ctrl_asm_init:
 	ldr	r0, =ASYNC_MSYS_DMC0_BASE
 
 	ldr     r1, =0x0
-	str     r1, [r0, #0x0]
+	str     r1, [r0, #0x0]			/* Enable full synchronizer instead of half synchronization */
 	
 	ldr	r1, =0x0
-	str	r1, [r0, #0xC]
+	str	r1, [r0, #0xC]				/* this is a register at 0xF1E0_000C, which does not exist in S5PV210 */
 	
 #ifdef CONFIG_MCP_SINGLE
 
 	/* DMC0 Drive Strength (Setting 2X) */
 	
-	ldr	r0, =ELFIN_GPIO_BASE
+	ldr	r0, =ELFIN_GPIO_BASE			/* 0xE020_0000 */
 
 	ldr	r1, =0x0000AAAA
-	str	r1, [r0, #MP1_0DRV_SR_OFFSET]
+	str	r1, [r0, #MP1_0DRV_SR_OFFSET]	/* All DDR2 I/O drivers at one from maximum driving strainght except SDIO */
 
 	ldr	r1, =0x0000AAAA
 	str	r1, [r0, #MP1_1DRV_SR_OFFSET]
@@ -83,13 +83,13 @@ mem_ctrl_asm_init:
 	ldr	r1, =0x00101000				@PhyControl0 DLL parameter setting, manual 0x00101000
 	str	r1, [r0, #DMC_PHYCONTROL0]
 
-	ldr	r1, =0x00000086				@PhyControl1 DLL parameter setting, LPDDR/LPDDR2 Case
+	ldr	r1, =0x00000086				@PhyControl1 DLL parameter setting, LPDDR/LPDDR2 Case /* WARNING the lsbs 6 is the value suggested for DDR2 @ 200MHz */
 	str	r1, [r0, #DMC_PHYCONTROL1]
 
 	ldr	r1, =0x00101002				@PhyControl0 DLL on
 	str	r1, [r0, #DMC_PHYCONTROL0]
 
-	ldr	r1, =0x00101003				@PhyControl0 DLL start
+	ldr	r1, =0x00101003				@PhyControl0 DLL start  ??ZZZ why not using Differential DQS
 	str	r1, [r0, #DMC_PHYCONTROL0]
 
 find_lock_val:
@@ -97,7 +97,7 @@ find_lock_val:
 	and	r2, r1, #0x7
 	cmp	r2, #0x7				@Loop until DLL is locked
 	bne	find_lock_val
-	
+
 	and	r1, #0x3fc0 
 	mov	r2, r1, LSL #18
 	orr	r2, r2, #0x100000
@@ -110,14 +110,15 @@ find_lock_val:
 	orr	r1, r2, #0x1				@DLL off
 	str	r1, [r0, #DMC_PHYCONTROL0]
 #endif
+
 	/* setting DDR2 */
 	ldr	r1, =0x0FFF1010				@ConControl auto refresh off
 	str	r1, [r0, #DMC_CONCONTROL]
 
-	ldr	r1, =0x00202400				@MemControl BL=4, 2 chip, DDR2 type, dynamic self refresh, force precharge, dynamic power down off
+	ldr	r1, =DMC0_MEMCONTROL				@MemControl BL=4, 2 chip, DDR2 type, dynamic self refresh, force precharge, dynamic power down off
 	str	r1, [r0, #DMC_MEMCONTROL]
 	
-	ldr	r1, =DMC0_MEMCONFIG_0			@MemConfig0 256MB config, 8 banks,Mapping Method[12:15]0:linear, 1:linterleaved, 2:Mixed
+	ldr	r1, =DMC0_MEMCONFIG_0			@MemConfig0 512MB config, 8 banks,Mapping Method[12:15]0:linear, 1:linterleaved, 2:Mixed
 	str	r1, [r0, #DMC_MEMCONFIG0]
 
 	ldr	r1, =DMC0_MEMCONFIG_1			@MemConfig1
@@ -150,10 +151,10 @@ find_lock_val:
 	ldr	r1, =0x00030000				@DirectCmd	chip0 EMRS3
 	str	r1, [r0, #DMC_DIRECTCMD]
 
-	ldr	r1, =0x00010001				@DirectCmd	chip0 EMRS1 (MEM DLL on, DQS# disable)
+	ldr	r1, =0x00010400				@DirectCmd	chip0 EMRS1 (MEM DLL on, DQS# disable)
 	str	r1, [r0, #DMC_DIRECTCMD]
 
-	ldr	r1, =0x00000532				@DirectCmd	chip0 MRS (MEM DLL reset) CL=3, BL=4
+	ldr	r1, =0x00001532				@DirectCmd	chip0 MRS (MEM DLL reset) CL=3, BL=4
 	str	r1, [r0, #DMC_DIRECTCMD]
 
 	ldr	r1, =0x01000000				@DirectCmd	chip0 PALL
@@ -165,13 +166,13 @@ find_lock_val:
 	ldr	r1, =0x05000000				@DirectCmd	chip0 REFA
 	str	r1, [r0, #DMC_DIRECTCMD]
 
-	ldr	r1, =0x00000432				@DirectCmd	chip0 MRS (MEM DLL unreset)
+	ldr	r1, =0x000004C2				@DirectCmd	chip0 MRS (MEM DLL unreset)
 	str	r1, [r0, #DMC_DIRECTCMD]
 
-	ldr	r1, =0x00010381				@DirectCmd	chip0 EMRS1 (OCD default)
+	ldr	r1, =0x00010780				@DirectCmd	chip0 EMRS1 (OCD default)
 	str	r1, [r0, #DMC_DIRECTCMD]
 
-	ldr	r1, =0x00010001				@DirectCmd	chip0 EMRS1 (OCD exit)
+	ldr	r1, =0x00010400				@DirectCmd	chip0 EMRS1 (OCD exit)
 	str	r1, [r0, #DMC_DIRECTCMD]
 	
 ;	ldr	r1, =0x07100000				@DirectCmd	chip1 Deselect
@@ -295,10 +296,10 @@ find_lock_val1:
 	ldr	r1, =0x00030000				@DirectCmd	chip0 EMRS3
 	str	r1, [r0, #DMC_DIRECTCMD]
 
-	ldr	r1, =0x00010001				@DirectCmd	chip0 EMRS1 (MEM DLL on, DQS# disable)
+	ldr	r1, =0x00010400				@DirectCmd	chip0 EMRS1 (MEM DLL on, DQS# disable)
 	str	r1, [r0, #DMC_DIRECTCMD]
 
-	ldr	r1, =0x00000532				@DirectCmd	chip0 MRS (MEM DLL reset) CL=3, BL=4
+	ldr	r1, =0x00001532				@DirectCmd	chip0 MRS (MEM DLL reset) CL=3, BL=4
 	str	r1, [r0, #DMC_DIRECTCMD]
 
 	ldr	r1, =0x01000000				@DirectCmd	chip0 PALL
@@ -313,10 +314,10 @@ find_lock_val1:
 	ldr	r1, =0x00000432				@DirectCmd	chip0 MRS (MEM DLL unreset)
 	str	r1, [r0, #DMC_DIRECTCMD]
 
-	ldr	r1, =0x00010381				@DirectCmd	chip0 EMRS1 (OCD default)
+	ldr	r1, =0x00010780				@DirectCmd	chip0 EMRS1 (OCD default)
 	str	r1, [r0, #DMC_DIRECTCMD]
 
-	ldr	r1, =0x00010001				@DirectCmd	chip0 EMRS1 (OCD exit)
+	ldr	r1, =0x00010400				@DirectCmd	chip0 EMRS1 (OCD exit)
 	str	r1, [r0, #DMC_DIRECTCMD]
 
 ;	ldr	r1, =0x07100000				@DirectCmd	chip1 Deselect

@@ -399,18 +399,21 @@
 
 #if defined(CONFIG_MCP_SINGLE)
 
-#define DMC0_MEMCONFIG_0	0x20E01323	// MemConfig0	256MB config, 8 banks,Mapping Method[12:15]0:linear, 1:linterleaved, 2:Mixed
+#define	DMC0_MEMCONTROL		0x00202400	// MemControl	BL=4, 2 chip, DDR2 type, dynamic self refresh, force precharge, dynamic power down off
+#define DMC0_MEMCONFIG_0	0x20E01323	// MemConfig0	512MB config, 8 banks,Mapping Method[12:15]0:linear, 1:linterleaved, 2:Mixed
 #define DMC0_MEMCONFIG_1	0x00E01323	// MemConfig1
-#define DMC0_TIMINGA_REF	0x00000618	// TimingAref	7.8us*133MHz=1038(0x40E), 100MHz=780(0x30C), 20MHz=156(0x9C), 10MHz=78(0x4E)
-#define DMC0_TIMING_ROW		0x28233289	// TimingRow	for @200MHz
+#define DMC0_TIMINGA_REF	0x00000618	// TimingAref	7.8us*200MHz=1560(0x618), 100MHz=780(0x30C), 20MHz=156(0x9C), 10MHz=78(0x4E)
+//#define DMC0_TIMING_ROW		0x28233289	// TimingRow	for @200MHz
+#define DMC0_TIMING_ROW		0x1A2332C8	// TimingRow	for @200MHz
 #define DMC0_TIMING_DATA	0x23230304	// TimingData	CL=3
-#define	DMC0_TIMING_PWR		0x08280232	// TimingPower
+//#define	DMC0_TIMING_PWR		0x08280232	// TimingPower
+#define	DMC0_TIMING_PWR		0x08C80232	// TimingPower
 
 #define	DMC1_MEMCONTROL		0x00202400	// MemControl	BL=4, 2 chip, DDR2 type, dynamic self refresh, force precharge, dynamic power down off
 #define DMC1_MEMCONFIG_0	0x40E01323	// MemConfig0	512MB config, 8 banks,Mapping Method[12:15]0:linear, 1:linterleaved, 2:Mixed
 #define DMC1_MEMCONFIG_1	0x00E01323	// MemConfig1
 #define DMC1_TIMINGA_REF	0x00000618	// TimingAref	7.8us*133MHz=1038(0x40E), 100MHz=780(0x30C), 20MHz=156(0x9C), 10MHz=78(0x4
-#define DMC1_TIMING_ROW		0x28233289	// TimingRow	for @200MHz
+#define DMC1_TIMING_ROW		0x1A2332C8	// TimingRow	for @200MHz
 #define DMC1_TIMING_DATA	0x23230304	// TimingData	CL=3
 #define	DMC1_TIMING_PWR		0x08280232	// TimingPower
 #if defined(CONFIG_CLK_800_100_166_133) || defined(CONFIG_CLK_400_100_166_133)
