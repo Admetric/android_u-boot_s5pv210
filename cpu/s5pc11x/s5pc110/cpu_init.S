@@ -1,6 +1,8 @@
 #include <config.h>
 #include <s5pc110.h>
 
+#define SH_TEST 1
+
 	.globl mem_ctrl_asm_init
 mem_ctrl_asm_init:
 
@@ -9,10 +11,16 @@ mem_ctrl_asm_init:
 	ldr     r1, =0x0
 	str     r1, [r0, #0x0]			/* Enable full synchronizer instead of half synchronization */
 	
-	ldr	r1, =0x0
-	str	r1, [r0, #0xC]				/* this is a register at 0xF1E0_000C, which does not exist in S5PV210 */
+@	ldr	r1, =0x0
+@	str	r1, [r0, #0xC]				/* this is a register at 0xF1E0_000C, which does not exist in S5PV210 */
 	
 #ifdef CONFIG_MCP_SINGLE
+
+#ifdef SH_TEST
+	ldr	r2, =ELFIN_UART_CONSOLE_BASE
+	ldr	r1, =0x43434343
+	str	r1, [r2, #UTXH_OFFSET]		@'C'  Transmit one character
+#endif @SH_TEST
 
 	/* DMC0 Drive Strength (Setting 2X) */
 	
@@ -141,7 +149,24 @@ find_lock_val:
 
 	ldr	r1, =0x07000000				@DirectCmd	chip0 Deselect
 	str	r1, [r0, #DMC_DIRECTCMD]
-	
+
+#ifdef SH_TEST
+	ldr	r2, =ELFIN_UART_CONSOLE_BASE
+	ldr	r1, =0x41414141
+	str	r1, [r2, #UTXH_OFFSET]		@'A'  Transmit one character
+#endif @SH_TEST
+	  
+	ldr       r2, =0x28				@ 400ns delay per JEDEC DDR2 spec. 
+loop400ns:
+    subs     r2, r2, #0x1
+    beq     loop400ns
+
+#ifdef SH_TEST
+	ldr	r2, =ELFIN_UART_CONSOLE_BASE
+	ldr	r1, =0x42424242
+	str	r1, [r2, #UTXH_OFFSET]		@'B'  Transmit one character
+#endif @SH_TEST
+
 	ldr	r1, =0x01000000				@DirectCmd	chip0 PALL
 	str	r1, [r0, #DMC_DIRECTCMD]
 
@@ -151,10 +176,12 @@ find_lock_val:
 	ldr	r1, =0x00030000				@DirectCmd	chip0 EMRS3
 	str	r1, [r0, #DMC_DIRECTCMD]
 
-	ldr	r1, =0x00010400				@DirectCmd	chip0 EMRS1 (MEM DLL on, DQS# disable)
+	ldr	r1, =0x00010400			@DirectCmd	chip0 EMRS1 (MEM DLL on, DQS# disable)
+@o	ldr	r1, =0x00010001			@DirectCmd	chip0 EMRS1 (MEM DLL on, DQS# disable)
 	str	r1, [r0, #DMC_DIRECTCMD]
 
 	ldr	r1, =0x00001532				@DirectCmd	chip0 MRS (MEM DLL reset) CL=3, BL=4
+@o	ldr	r1, =0x00000532				@DirectCmd	chip0 MRS (MEM DLL reset) CL=3, BL=4
 	str	r1, [r0, #DMC_DIRECTCMD]
 
 	ldr	r1, =0x01000000				@DirectCmd	chip0 PALL
@@ -166,13 +193,15 @@ find_lock_val:
 	ldr	r1, =0x05000000				@DirectCmd	chip0 REFA
 	str	r1, [r0, #DMC_DIRECTCMD]
 
-	ldr	r1, =0x000004C2				@DirectCmd	chip0 MRS (MEM DLL unreset)
+	ldr	r1, =0x00000432				@DirectCmd	chip0 MRS (MEM DLL unreset)
 	str	r1, [r0, #DMC_DIRECTCMD]
 
 	ldr	r1, =0x00010780				@DirectCmd	chip0 EMRS1 (OCD default)
+@o	ldr	r1, =0x00010381				@DirectCmd	chip0 EMRS1 (OCD default)
 	str	r1, [r0, #DMC_DIRECTCMD]
 
 	ldr	r1, =0x00010400				@DirectCmd	chip0 EMRS1 (OCD exit)
+@o	ldr	r1, =0x00010001				@DirectCmd	chip0 EMRS1 (OCD exit)
 	str	r1, [r0, #DMC_DIRECTCMD]
 	
 ;	ldr	r1, =0x07100000				@DirectCmd	chip1 Deselect
@@ -217,7 +246,7 @@ find_lock_val:
 	ldr	r1, =0xFFFF00FF				@PwrdnConfig
 	str	r1, [r0, #DMC_PWRDNCONFIG]
 		
-	ldr	r1, =0x00202400				@MemControl	BL=4, 2 chip, DDR2 type, dynamic self refresh, force precharge, dynamic power down off
+	ldr	r1, =DMC0_MEMCONTROL				@MemControl	BL=4, 2 chip, DDR2 type, dynamic self refresh, force precharge, dynamic power down off
 	str	r1, [r0, #DMC_MEMCONTROL]
 
 	/* DMC1 initialization */
@@ -286,6 +315,23 @@ find_lock_val1:
 
 	ldr	r1, =0x07000000				@DirectCmd	chip0 Deselect
 	str	r1, [r0, #DMC_DIRECTCMD]
+	  
+#ifdef SH_TEST
+	ldr	r2, =ELFIN_UART_CONSOLE_BASE
+	ldr	r1, =0x43434343
+	str	r1, [r2, #UTXH_OFFSET]		@'C'  Transmit one character
+#endif @SH_TEST
+
+	ldr       r2, =0x28				@ 400ns delay per JEDEC DDR2 spec. 
+loop400ns_2:
+    subs     r2, r2, #0x1
+    beq     loop400ns_2
+    
+#ifdef SH_TEST
+	ldr	r2, =ELFIN_UART_CONSOLE_BASE
+	ldr	r1, =0x44444444
+	str	r1, [r2, #UTXH_OFFSET]		@'D'  Transmit one character
+#endif @SH_TEST
 
 	ldr	r1, =0x01000000				@DirectCmd	chip0 PALL
 	str	r1, [r0, #DMC_DIRECTCMD]
@@ -297,9 +343,11 @@ find_lock_val1:
 	str	r1, [r0, #DMC_DIRECTCMD]
 
 	ldr	r1, =0x00010400				@DirectCmd	chip0 EMRS1 (MEM DLL on, DQS# disable)
+@o	ldr	r1, =0x00010001				@DirectCmd	chip0 EMRS1 (MEM DLL on, DQS# disable)
 	str	r1, [r0, #DMC_DIRECTCMD]
 
 	ldr	r1, =0x00001532				@DirectCmd	chip0 MRS (MEM DLL reset) CL=3, BL=4
+@o	ldr	r1, =0x00000532				@DirectCmd	chip0 MRS (MEM DLL reset) CL=3, BL=4
 	str	r1, [r0, #DMC_DIRECTCMD]
 
 	ldr	r1, =0x01000000				@DirectCmd	chip0 PALL
@@ -315,9 +363,11 @@ find_lock_val1:
 	str	r1, [r0, #DMC_DIRECTCMD]
 
 	ldr	r1, =0x00010780				@DirectCmd	chip0 EMRS1 (OCD default)
+@o	ldr	r1, =0x00010381				@DirectCmd	chip0 EMRS1 (OCD default)
 	str	r1, [r0, #DMC_DIRECTCMD]
 
 	ldr	r1, =0x00010400				@DirectCmd	chip0 EMRS1 (OCD exit)
+@o	ldr	r1, =0x00010001				@DirectCmd	chip0 EMRS1 (OCD exit)
 	str	r1, [r0, #DMC_DIRECTCMD]
 
 ;	ldr	r1, =0x07100000				@DirectCmd	chip1 Deselect
